@@ -183,6 +183,12 @@ export const localApplications: BusinessApplication[] = [
 		coverage: 'Setiap lokasi',
 		description: 'Aplikasi desktop kasir untuk operasional lokal di setiap lokasi.'
 	},
+	{
+		name: 'Inventory Lokal',
+		platforms: ['Lokal'],
+		coverage: 'Setiap lokasi',
+		description: 'Sistem inventori lokal untuk operasional gudang di setiap lokasi.'
+	},
 	{ name: 'HRIS Lokal', platforms: ['Lokal'], coverage: 'Setiap lokasi' },
 	{
 		name: 'SmartMill Scale',

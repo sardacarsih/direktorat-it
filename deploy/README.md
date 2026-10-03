@@ -35,13 +35,13 @@ Script aktivasi disalin ke `/tmp` bersama `add-tunnel-route.py`. Periksa hasil d
 
 ## Rilis aktif yang diverifikasi
 
-Deployment 3 Oktober 2026: `20261003-163130` (terkini). Backup konfigurasi tunnel: `/etc/cloudflared/config.yml.it-20261003-062656.bak`.
+Deployment 3 Oktober 2026: `20261003-163815` (terkini). Backup konfigurasi tunnel: `/etc/cloudflared/config.yml.it-20261003-062656.bak`.
 
 Rilis ini memasang dashboard monitoring nyata: enam aplikasi, resource host, penerimaan koneksi PostgreSQL, dan HTTPS publik. Collector `it-status` berjalan setiap menit sebagai user khusus; SQLite menyimpan sampel 30 hari dan endpoint JSON memiliki Cache-Control no-store. Dashboard publik desktop/mobile, pemuatan aset, dan endpoint status berhasil diverifikasi. Probe lokal serta HTTPS keenam aplikasi berhasil pada pemeriksaan awal; hasil berikutnya mengikuti kondisi aktual. HRIS/OPAL memakai pemeriksaan HTTP halaman; belum ada monitor dari host terpisah atau heartbeat sistem di lokasi lain. Apache dan cloudflared tetap aktif tanpa perubahan rute tunnel. Semua CTA dukungan tetap menuju portal resmi.
 
 Panel hero kini berbagi polling dengan dashboard: akses publik, resource server, aplikasi, dan PostgreSQL. Angka uptime adalah minimum uptime aplikasi teramati, dengan cakupan minimum sampel dan waktu pemeriksaan WIB. Klaim demo ONLINE/SECURITY aktif dan angka uptime tetap sudah dihapus dari hero. Data invalid, gagal dimuat, atau stale membuat kedua panel belum diketahui. Verifikasi publik desktop/mobile berhasil; collector dan riwayat sebelumnya tetap dipertahankan.
 
-Section Tentang kini memakai jumlah katalog aktual: enam aplikasi Web, enam Mobile, lima sistem lokal, enam kapabilitas. Jumlah dihitung dari daftar konten, dengan penjelasan tumpang tindih platform. Footer berbagi monitoring live tanpa polling tambahan dan menampilkan belum diketahui ketika data hilang/stale. Klaim uptime 99,98%, operasional 24/7, 50+ sistem, dan monitoring keamanan 100% sudah dihapus dari statistik Tentang. Desktop/mobile dan fallback tanpa JavaScript telah diverifikasi.
+Section Tentang kini memakai jumlah katalog aktual: enam aplikasi Web, enam Mobile, enam sistem lokal, enam kapabilitas. Katalog lokal mencakup Inventory Lokal untuk setiap lokasi. Jumlah dihitung dari daftar konten, dengan penjelasan tumpang tindih platform. Footer berbagi monitoring live tanpa polling tambahan dan menampilkan belum diketahui ketika data hilang/stale. Klaim uptime 99,98%, operasional 24/7, 50+ sistem, dan monitoring keamanan 100% sudah dihapus dari statistik Tentang. Desktop/mobile dan fallback tanpa JavaScript telah diverifikasi.
 
 Rilis sebelumnya: `20261003-162730` (hero live), `20261003-161609` (collector dan dashboard live), `20261003-160431` (katalog aplikasi), `20261003-150110` (portal resmi), `20261003-062656` (tautan internal `#kontak`/`#dukungan`), `20261003-062558`.
 

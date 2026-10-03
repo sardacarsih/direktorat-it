@@ -1245,7 +1245,7 @@ h2 {
 	color: #5b5953;
 }
 .local-applications-grid {
-	grid-template-columns: repeat(5, minmax(0, 1fr));
+	grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 .local-application-card {
 	background: #e9e6dd;
