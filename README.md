@@ -2,6 +2,18 @@
 
 Landing page berbahasa Indonesia dengan SvelteKit, TypeScript, Tailwind CSS, dan Lucide. Seluruh halaman diprerender menjadi HTML statis. Font dibundel lokal; tidak ada ketergantungan font pada layanan eksternal.
 
+## Tangkapan Layar
+
+Situs produksi [it.kskgroup.web.id](https://it.kskgroup.web.id), 3 Oktober 2026.
+
+| Desktop (1440px) | Mobile (390px) |
+| --- | --- |
+| ![Tampilan utama desktop](docs/screenshots/desktop-hero.png) | ![Tampilan utama mobile](docs/screenshots/mobile-hero.png) |
+
+Halaman lengkap (desktop):
+
+![Seluruh halaman desktop](docs/screenshots/desktop-full.png)
+
 ## Menjalankan dengan Bun
 
 Gunakan Bun 1.4.2 atau lebih baru.
