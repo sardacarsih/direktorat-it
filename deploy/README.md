@@ -21,6 +21,8 @@ sudo bash /tmp/install-release.sh /tmp/it-direktorat-<release-id>.tar.gz <releas
 
 `install-release.sh` disalin dari checkout lokal ke `/tmp` terlebih dahulu. Script memverifikasi rilis, mengatur label SELinux, menukar symlink secara atomik, memeriksa konfigurasi Apache, dan melakukan reload. Jika pemeriksaan origin gagal, rilis serta konfigurasi Apache sebelumnya dikembalikan.
 
+Untuk pemasangan atau pembaruan collector status, jalankan `deploy/monitoring/install.sh` sebagai root dengan direktori sumber monitoring rilis baru sebelum aktivasi konten. Verifikasi `/status.json` dan `it-status.timer`; panduan lengkap di [monitoring/README.md](monitoring/README.md). Data monitoring berada di luar folder rilis dan tidak diganti saat rollback konten.
+
 Konfigurasi Cloudflare/DNS hanya perlu diubah pada deployment pertama. `add-tunnel-route.py` menyiapkan kandidat konfigurasi; validasi menggunakan `cloudflared tunnel ingress validate` sebelum memasangnya. Simpan backup konfigurasi Cloudflare dan verifikasi hostname layanan lain setelah restart tunnel.
 
 Jika koneksi SSH juga melalui Cloudflare, restart tunnel dapat memutus sesi SSH. Jalankan aktivasi sebagai unit systemd terpisah agar proses tetap berjalan:
@@ -33,11 +35,11 @@ Script aktivasi disalin ke `/tmp` bersama `add-tunnel-route.py`. Periksa hasil d
 
 ## Rilis aktif yang diverifikasi
 
-Deployment 3 Oktober 2026: `20261003-150110` (terkini). Backup konfigurasi tunnel: `/etc/cloudflared/config.yml.it-20261003-062656.bak`.
+Deployment 3 Oktober 2026: `20261003-161609` (terkini). Backup konfigurasi tunnel: `/etc/cloudflared/config.yml.it-20261003-062656.bak`.
 
-HTTPS dan hash HTML publik sesuai build lokal. Rilis ini menghubungkan seluruh CTA (navbar, hero, panel dukungan, footer) ke portal produksi `https://itportal.kskgroup.web.id` — opsi dukungan mengarah ke `/tiket/baru`. Menu mobile, diagram interaktif, pemuatan aset, cache immutable, serta gzip sudah diverifikasi. Apache dan cloudflared aktif; rute eOfficePro dan MOPS tetap sesuai konfigurasi sebelumnya, dan kedua origin merespons HTTP 200.
+Rilis ini memasang dashboard monitoring nyata: enam aplikasi, resource host, penerimaan koneksi PostgreSQL, dan HTTPS publik. Collector `it-status` berjalan setiap menit sebagai user khusus; SQLite menyimpan sampel 30 hari dan endpoint JSON memiliki Cache-Control no-store. Dashboard publik desktop/mobile, pemuatan aset, dan endpoint status berhasil diverifikasi. Probe lokal serta HTTPS keenam aplikasi berhasil pada pemeriksaan awal; hasil berikutnya mengikuti kondisi aktual. HRIS/OPAL memakai pemeriksaan HTTP halaman; belum ada monitor dari host terpisah atau heartbeat sistem di lokasi lain. Apache dan cloudflared tetap aktif tanpa perubahan rute tunnel. Semua CTA dukungan tetap menuju portal resmi.
 
-Rilis sebelumnya: `20261003-062656` (tautan internal `#kontak`/`#dukungan`), `20261003-062558`.
+Rilis sebelumnya: `20261003-160431` (katalog aplikasi), `20261003-150110` (portal resmi), `20261003-062656` (tautan internal `#kontak`/`#dukungan`), `20261003-062558`.
 
 ## Rollback konten
 

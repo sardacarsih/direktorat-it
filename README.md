@@ -34,13 +34,15 @@ Flag `--bun` memastikan CLI menggunakan runtime Bun. Build menghasilkan direktor
 
 Ubah konten contoh melalui `src/lib/content.ts`. Komponen berada di `src/lib/components/` dan token visual serta breakpoint di `src/app.css`.
 
-Status operasional, statistik, daftar teknologi, dan inisiatif merupakan ilustrasi, bukan data monitoring organisasi. Timestamp demo tetap. Seluruh CTA dukungan dan panel layanan terhubung ke portal resmi di [itportal.kskgroup.web.id](https://itportal.kskgroup.web.id).
+Dashboard operasional mengambil `/status.json` dari collector server setiap 60 detik, termasuk status aplikasi, CPU/RAM/disk, kesiapan koneksi PostgreSQL, dan HTTPS publik. Riwayat dan cakupan pemeriksaan ditampilkan; data hilang atau lebih lama dari 3 menit menjadi belum diketahui. Pemeriksaan berasal dari host yang sama, belum ada monitor eksternal atau heartbeat sistem lokal per lokasi. Detail pemasangan tersedia di [deploy/monitoring/README.md](deploy/monitoring/README.md).
+
+Statistik pada section Tentang, ilustrasi hero/footer berlabel demo, daftar teknologi, inisiatif, dan panel dukungan masih merupakan ilustrasi. Seluruh CTA dukungan terhubung ke portal resmi di [itportal.kskgroup.web.id](https://itportal.kskgroup.web.id).
 
 ## Deployment server
 
 Website dipublikasikan pada **3 Oktober 2026** di [it.kskgroup.web.id](https://it.kskgroup.web.id). Server menyajikan build statis melalui Apache dan Cloudflare Tunnel. Panduan update serta rollback tersedia di [deploy/README.md](deploy/README.md).
 
-Verifikasi publik berhasil: HTTPS 200, HTML identik dengan build lokal, seluruh aset termuat, menu dan diagram berfungsi, tidak ada overflow pada desktop/mobile, cache aset immutable, serta kompresi gzip aktif. Data dan panel dukungan tetap menggunakan mode demo.
+Verifikasi publik sebelumnya berhasil: HTTPS 200, konten HTML sesuai build lokal (Cloudflare dapat menambahkan skrip analitik), seluruh aset termuat, menu dan diagram berfungsi, tidak ada overflow pada desktop/mobile, cache aset immutable, serta kompresi gzip aktif. Panel dukungan tetap menggunakan mode demo.
 
 Font Space Grotesk dan IBM Plex Mono didistribusikan melalui Fontsource dengan lisensi SIL OFL yang disertakan dalam paket masing-masing. Ikon Lucide menggunakan lisensi ISC.
 

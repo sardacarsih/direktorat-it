@@ -2,3 +2,5 @@ node_modules/
 .svelte-kit/
 build/
 .qa/
+__pycache__/
+*.pyc

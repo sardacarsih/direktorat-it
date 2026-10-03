@@ -1,0 +1,60 @@
+{
+	"apps": [
+		{
+			"id": "agrinova",
+			"name": "Agrinova",
+			"services": ["agrinova-backend", "agrinova-web"],
+			"checks": [
+				{ "url": "http://127.0.0.1:8080/health", "json": { "status": "ok" } },
+				{ "url": "http://127.0.0.1:3000/login" }
+			],
+			"publicUrl": "https://agrinova.kskgroup.web.id"
+		},
+		{
+			"id": "mops",
+			"name": "MOPS",
+			"services": ["mops"],
+			"checks": [{ "url": "http://127.0.0.1:3001/healthz", "json": { "status": "ok" } }],
+			"publicUrl": "https://mops.kskgroup.web.id"
+		},
+		{
+			"id": "eofficepro",
+			"name": "eOfficePro",
+			"services": ["eoffice-api", "eoffice-web"],
+			"checks": [
+				{
+					"url": "http://127.0.0.1:8888/healthz",
+					"json": { "deps": { "minio": "ok", "postgres": "ok", "redis": "ok" } }
+				},
+				{ "url": "http://127.0.0.1:3333/login" }
+			],
+			"publicUrl": "https://eofficepro.kskgroup.web.id"
+		},
+		{
+			"id": "inventory",
+			"name": "Inventory",
+			"services": ["inventory-central-api", "inventory-web-admin"],
+			"checks": [
+				{ "url": "http://127.0.0.1:8442/ready", "json": { "status": "READY" } },
+				{ "url": "http://127.0.0.1:8441/login" }
+			],
+			"publicUrl": "https://inventori.kskgroup.web.id"
+		},
+		{
+			"id": "hris",
+			"name": "HRIS",
+			"services": ["httpd", "php-fpm"],
+			"checks": [{ "url": "http://127.0.0.1/", "host": "hris.kskgroup.web.id" }],
+			"publicUrl": "https://hris.kskgroup.web.id",
+			"limited": true
+		},
+		{
+			"id": "opal",
+			"name": "OPAL",
+			"services": ["httpd", "php-fpm"],
+			"checks": [{ "url": "http://127.0.0.1/", "host": "opal.kskgroup.web.id" }],
+			"publicUrl": "https://opal.kskgroup.web.id",
+			"limited": true
+		}
+	]
+}

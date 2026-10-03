@@ -1,0 +1,16 @@
+[Unit]
+Description=Direktorat IT read-only status collector
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=it-status
+Group=it-status
+ExecStart=/usr/bin/python3 /apps/it-direktorat/monitoring/collector.py
+TimeoutStartSec=50
+UMask=0022
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/apps/it-direktorat/monitoring/data /apps/it-direktorat/status

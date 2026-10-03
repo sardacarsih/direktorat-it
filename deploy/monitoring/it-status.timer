@@ -1,0 +1,11 @@
+[Unit]
+Description=Check Direktorat IT services every minute
+
+[Timer]
+OnBootSec=15s
+OnUnitActiveSec=60s
+AccuracySec=1s
+Unit=it-status.service
+
+[Install]
+WantedBy=timers.target

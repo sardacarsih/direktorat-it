@@ -63,36 +63,6 @@ export const statistics = [
 	{ value: 50, suffix: '+', label: 'SISTEM DIGITAL', decimals: 0 },
 	{ value: 100, suffix: '%', label: 'MONITORING KEAMANAN', decimals: 0 }
 ];
-export const operations = [
-	{
-		name: 'CORE NETWORK',
-		status: 'OPERASIONAL',
-		value: '99.99%',
-		label: 'UPTIME',
-		metric: 'LATENSI: 12 ms'
-	},
-	{
-		name: 'DATACENTER',
-		status: 'OPERASIONAL',
-		value: '99.98%',
-		label: 'UPTIME',
-		metric: 'NODE: 08 / 08'
-	},
-	{
-		name: 'ENTERPRISE APPS',
-		status: 'OPERASIONAL',
-		value: '99.95%',
-		label: 'UPTIME',
-		metric: 'INSIDEN: 00'
-	},
-	{
-		name: 'CYBER SECURITY',
-		status: 'AKTIF',
-		value: '24/7',
-		label: 'MONITORING',
-		metric: 'PROTEKSI: AKTIF'
-	}
-];
 export const ecosystem = [
 	{
 		id: 'business',

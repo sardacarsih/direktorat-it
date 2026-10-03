@@ -25,7 +25,7 @@
 		{#each navigation as [label, href]}<a {href}>{label}</a>{/each}
 	</nav>
 	<div class="nav-right">
-		<span class="nav-status mono"><span class="status-dot"></span>SISTEM AKTIF</span><a
+		<a class="nav-status mono" href="#sistem">STATUS SISTEM</a><a
 			href={portalUrl}
 			target="_blank"
 			rel="noopener"
