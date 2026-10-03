@@ -7,7 +7,7 @@
 <section id="sistem" class="operations section-space">
 	<div class="section-shell">
 		<SectionHeading
-			number="04"
+			number="05"
 			label="OPERASIONAL & MONITORING"
 			title="SELALU DALAM PANTAUAN."
 			text="Visibilitas di setiap lapisan. Karena keandalan bukan sebuah kebetulan."

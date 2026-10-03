@@ -7,7 +7,7 @@
 <section class="initiatives-section section-space">
 	<div class="section-shell">
 		<SectionHeading
-			number="06"
+			number="07"
 			label="INISIATIF DIGITAL"
 			title="LANGKAH KE DEPAN."
 			text="Arah pengembangan untuk ekosistem digital yang semakin matang. Ilustrasi inisiatif Direktorat IT."

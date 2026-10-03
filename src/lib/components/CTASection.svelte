@@ -8,7 +8,7 @@
 	<div class="section-shell">
 		<div class="cta-layout">
 			<div>
-				<p class="eyebrow mono">[07] / MARI TERHUBUNG</p>
+				<p class="eyebrow mono">[08] / MARI TERHUBUNG</p>
 				<h2>BUTUH<br />DUKUNGAN IT<span>?</span></h2>
 				<p>
 					Akses layanan, laporkan kendala, atau diskusikan kebutuhan teknologi bersama tim

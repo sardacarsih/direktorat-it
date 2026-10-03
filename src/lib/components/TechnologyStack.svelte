@@ -5,7 +5,7 @@
 
 <section class="section-shell section-space tech-section">
 	<SectionHeading
-		number="05"
+		number="06"
 		label="TECHNOLOGY STACK"
 		title="PERANGKAT UNTUK MEMBANGUN."
 		text="Dari open source hingga enterprise. Teknologi dipilih sesuai kebutuhan, bukan sekadar tren."

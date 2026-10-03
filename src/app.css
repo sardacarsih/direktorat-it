@@ -1038,6 +1038,159 @@ h2 {
 .tech-tag:nth-child(4n + 2) {
 	background: var(--cream);
 }
+.applications-section {
+	border-top: var(--line);
+	background: var(--cream);
+}
+.application-group + .application-group {
+	margin-top: 48px;
+}
+.application-group-heading {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	margin-bottom: 20px;
+}
+.application-group-heading h3 {
+	font-size: 24px;
+	font-weight: 600;
+	letter-spacing: -0.7px;
+}
+.application-group-heading > span {
+	font-size: 10px;
+	color: #5b5953;
+}
+.applications-grid {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 16px;
+}
+.application-card {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	min-width: 0;
+	padding: 24px;
+	border: var(--line);
+	background: #fffdf7;
+}
+.application-card-top {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	width: 100%;
+}
+.application-index {
+	font-size: 11px;
+	color: #5b5953;
+}
+.application-platforms {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+.application-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 8px;
+	border: 1px solid var(--blue);
+	background: var(--blue);
+	color: #fff;
+	font-size: 10px;
+	line-height: 1.2;
+}
+.application-badge.mobile {
+	border-color: var(--ink);
+	background: var(--lime);
+	color: var(--ink);
+}
+.application-badge.local {
+	border-color: var(--ink);
+	background: var(--ink);
+}
+.application-card h4 {
+	margin: 26px 0 20px;
+	font-size: 28px;
+	font-weight: 600;
+	line-height: 1.15;
+	letter-spacing: -1px;
+	overflow-wrap: anywhere;
+}
+.application-link {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	width: 100%;
+	min-height: 44px;
+	margin-top: auto;
+	border-top: 1px solid #1114;
+	padding-top: 10px;
+	font-size: 11px;
+	color: var(--blue);
+}
+.application-link:hover {
+	text-decoration: underline;
+	text-underline-offset: 4px;
+}
+.application-access {
+	display: flex;
+	align-items: center;
+	width: 100%;
+	min-height: 44px;
+	margin-top: auto;
+	border-top: 1px solid #1114;
+	padding-top: 10px;
+	font-size: 10px;
+	color: #5b5953;
+}
+.local-applications-grid {
+	grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+.local-application-card {
+	background: #e9e6dd;
+	padding: 20px;
+}
+.local-application-card h4 {
+	font-size: 23px;
+}
+.application-description {
+	margin-bottom: 20px;
+	font-size: 13px;
+	line-height: 1.7;
+	color: #5b5953;
+}
+.application-coverage {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	margin-top: auto;
+	font-size: 13px;
+	color: #5b5953;
+}
+@media (max-width: 1200px) {
+	.local-applications-grid {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+}
+@media (max-width: 960px) {
+	.applications-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+@media (max-width: 600px) {
+	.applications-grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.application-group-heading {
+		align-items: flex-start;
+		flex-direction: column;
+		gap: 8px;
+	}
+}
 .initiatives-section {
 	border-top: var(--line);
 	background: #e9e6dd;

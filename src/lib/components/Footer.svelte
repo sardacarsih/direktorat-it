@@ -13,7 +13,7 @@
 				<p class="footer-manifesto">BUILD. SECURE.<br />OPERATE. INNOVATE.</p>
 			</div>
 			<nav aria-label="Navigasi footer">
-				{#each [['TENTANG', '#tentang'], ['LAYANAN', '#layanan'], ['SISTEM', '#sistem'], ['PORTAL LAYANAN', portalUrl], ['KEAMANAN', '#sistem'], ['KONTAK', '#kontak']] as [label, href]}<a
+				{#each [['TENTANG', '#tentang'], ['LAYANAN', '#layanan'], ['APLIKASI', '#aplikasi'], ['SISTEM', '#sistem'], ['PORTAL LAYANAN', portalUrl], ['KEAMANAN', '#sistem'], ['KONTAK', '#kontak']] as [label, href]}<a
 						class="mono"
 						{href}>{label}<ArrowUpRight size={15} /></a
 					>{/each}

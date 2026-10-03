@@ -6,6 +6,7 @@
 	import About from '$lib/components/About.svelte';
 	import ServicesGrid from '$lib/components/ServicesGrid.svelte';
 	import DigitalEcosystem from '$lib/components/DigitalEcosystem.svelte';
+	import BusinessApplications from '$lib/components/BusinessApplications.svelte';
 	import OperationsDashboard from '$lib/components/OperationsDashboard.svelte';
 	import TechnologyStack from '$lib/components/TechnologyStack.svelte';
 	import Initiatives from '$lib/components/Initiatives.svelte';
@@ -54,7 +55,7 @@
 >
 <Navbar />
 <main id="main">
-	<Hero /><Ticker /><About /><ServicesGrid /><DigitalEcosystem /><OperationsDashboard
-	/><TechnologyStack /><Initiatives /><CTASection />
+	<Hero /><Ticker /><About /><ServicesGrid /><DigitalEcosystem /><BusinessApplications
+	/><OperationsDashboard /><TechnologyStack /><Initiatives /><CTASection />
 </main>
 <Footer />

@@ -2,6 +2,7 @@ export const navigation = [
 	['BERANDA', '#beranda'],
 	['TENTANG', '#tentang'],
 	['LAYANAN', '#layanan'],
+	['APLIKASI', '#aplikasi'],
 	['SISTEM', '#sistem'],
 	['TIM', '#tim'],
 	['KONTAK', '#kontak']
@@ -156,6 +157,78 @@ export const initiatives = [
 		color: 'yellow'
 	}
 ];
+export type BusinessApplication = {
+	name: string;
+	platforms: ('Web' | 'Mobile' | 'Lokal')[];
+	url?: string;
+	coverage?: string;
+	description?: string;
+};
+
+export const businessApplications: BusinessApplication[] = [
+	{
+		name: 'Agrinova',
+		platforms: ['Web', 'Mobile'],
+		url: 'https://agrinova.kskgroup.web.id',
+		description:
+			'Platform operasional kebun sawit untuk pencatatan panen, gate check, persetujuan, monitoring, dan pelaporan. Mobile mendukung kerja offline dengan sinkronisasi saat koneksi tersedia.'
+	},
+	{
+		name: 'MOPS',
+		platforms: ['Web', 'Mobile'],
+		url: 'https://mops.kskgroup.web.id',
+		description:
+			'Platform operasional dan pelaporan PKS untuk konsolidasi transaksi timbang dan grading dari SmartMill Scale, laporan produksi harian, serta monitoring manajemen melalui web dan mobile.'
+	},
+	{
+		name: 'eOfficePro',
+		platforms: ['Web', 'Mobile'],
+		url: 'https://eofficepro.kskgroup.web.id',
+		description:
+			'Sistem surat menyurat internal digital untuk pembuatan surat berbasis template, persetujuan berjenjang, disposisi, pelacakan status, dan pencarian arsip melalui web dan aplikasi Android.'
+	},
+	{
+		name: 'Inventory',
+		platforms: ['Web', 'Mobile'],
+		url: 'https://inventori.kskgroup.web.id',
+		description:
+			'Sistem inventori terpusat untuk pengelolaan master barang, pemantauan saldo stok antar lokasi, permintaan dan penerimaan barang divisi, serta sinkronisasi data dengan sistem lokal.'
+	},
+	{ name: 'HRIS', platforms: ['Web', 'Mobile'], url: 'https://hris.kskgroup.web.id' },
+	{ name: 'OPAL', platforms: ['Web', 'Mobile'], url: 'https://opal.kskgroup.web.id' }
+];
+
+export const localApplications: BusinessApplication[] = [
+	{
+		name: 'Accounting',
+		platforms: ['Lokal'],
+		coverage: 'Setiap lokasi',
+		description:
+			'Aplikasi desktop akuntansi untuk pencatatan jurnal, General Ledger, pengelolaan akun, aset tetap dan penyusutan, serta laporan dan ekspor data.'
+	},
+	{
+		name: 'Finance',
+		platforms: ['Lokal'],
+		coverage: 'Setiap lokasi',
+		description:
+			'Aplikasi desktop payroll agronomi untuk pengelolaan BKM, penggajian harian dan bulanan, premi, tunjangan, potongan termasuk BPJS, serta laporan penggajian.'
+	},
+	{
+		name: 'Kasir',
+		platforms: ['Lokal'],
+		coverage: 'Setiap lokasi',
+		description: 'Aplikasi desktop kasir untuk operasional lokal di setiap lokasi.'
+	},
+	{ name: 'HRIS Lokal', platforms: ['Lokal'], coverage: 'Setiap lokasi' },
+	{
+		name: 'SmartMill Scale',
+		platforms: ['Lokal'],
+		coverage: 'Setiap PKS',
+		description:
+			'Aplikasi desktop untuk timbang masuk dan keluar, pembacaan perangkat timbangan, grading, cetak tiket, serta laporan dan ekspor PDF/Excel.'
+	}
+];
+
 export const technologies = [
 	'GO',
 	'POSTGRESQL',
