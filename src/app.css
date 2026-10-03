@@ -446,7 +446,25 @@ h1 {
 .terminal-row i {
 	height: 6px;
 	width: 6px;
-	background: #397a1b;
+	background: currentColor;
+}
+.terminal-row [data-status='unknown'] {
+	color: #666;
+}
+.terminal-row [data-status='degraded'] {
+	color: #805800;
+}
+.terminal-row [data-status='down'] {
+	color: #b02b0c;
+}
+.terminal-row {
+	gap: 12px;
+}
+.terminal-coverage {
+	font-size: 8px;
+	line-height: 1.6;
+	margin-top: 10px;
+	color: #666;
 }
 .terminal-bottom {
 	display: flex;
@@ -481,6 +499,8 @@ h1 {
 	color: #666;
 }
 .terminal-foot {
+	display: block;
+	min-height: 44px;
 	background: #111;
 	color: var(--lime);
 	padding: 10px 19px;

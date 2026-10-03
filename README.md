@@ -34,9 +34,9 @@ Flag `--bun` memastikan CLI menggunakan runtime Bun. Build menghasilkan direktor
 
 Ubah konten contoh melalui `src/lib/content.ts`. Komponen berada di `src/lib/components/` dan token visual serta breakpoint di `src/app.css`.
 
-Dashboard operasional mengambil `/status.json` dari collector server setiap 60 detik, termasuk status aplikasi, CPU/RAM/disk, kesiapan koneksi PostgreSQL, dan HTTPS publik. Riwayat dan cakupan pemeriksaan ditampilkan; data hilang atau lebih lama dari 3 menit menjadi belum diketahui. Pemeriksaan berasal dari host yang sama, belum ada monitor eksternal atau heartbeat sistem lokal per lokasi. Detail pemasangan tersedia di [deploy/monitoring/README.md](deploy/monitoring/README.md).
+Panel hero dan dashboard operasional berbagi satu polling `/status.json` setiap 60 detik, termasuk status aplikasi, CPU/RAM/disk, kesiapan koneksi PostgreSQL, dan HTTPS publik. Hero menampilkan nilai minimum uptime aplikasi teramati dengan cakupan minimum sampelnya selama 30 hari. Riwayat dan cakupan pemeriksaan ditampilkan; data hilang atau lebih lama dari 3 menit menjadi belum diketahui. Pemeriksaan berasal dari host yang sama, belum ada monitor eksternal atau heartbeat sistem lokal per lokasi. Detail pemasangan tersedia di [deploy/monitoring/README.md](deploy/monitoring/README.md).
 
-Statistik pada section Tentang, ilustrasi hero/footer berlabel demo, daftar teknologi, inisiatif, dan panel dukungan masih merupakan ilustrasi. Seluruh CTA dukungan terhubung ke portal resmi di [itportal.kskgroup.web.id](https://itportal.kskgroup.web.id).
+Statistik pada section Tentang, footer berlabel demo, daftar teknologi, inisiatif, dan panel dukungan masih merupakan ilustrasi. Seluruh CTA dukungan terhubung ke portal resmi di [itportal.kskgroup.web.id](https://itportal.kskgroup.web.id).
 
 ## Deployment server
 

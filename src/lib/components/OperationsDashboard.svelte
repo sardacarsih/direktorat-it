@@ -1,27 +1,15 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import SectionHeading from './SectionHeading.svelte';
 	import { Activity } from '@lucide/svelte';
-	import { parseStatus, statusLabels, type StatusSnapshot, type SystemStatus } from '$lib/status';
-	let snapshot = $state<StatusSnapshot | null>(null);
-	let now = $state(Date.now());
-	let failed = $state(false);
-	const fresh = $derived(
-		snapshot !== null && !failed && now - Date.parse(snapshot.checkedAt) <= 180000
-	);
-	const data = $derived(fresh ? snapshot : null);
+	import { statusLabels, type SystemStatus } from '$lib/status';
+	import { applicationState, systemStatus } from '$lib/status-store';
+	const snapshot = $derived($systemStatus.snapshot);
+	const fresh = $derived($systemStatus.fresh);
+	const data = $derived($systemStatus.data);
 	const healthyApps = $derived(
 		data?.apps.filter((app) => app.status === 'operational').length ?? 0
 	);
-	const appState = $derived(
-		!data
-			? 'unknown'
-			: data.apps.every((app) => app.status === 'operational')
-				? 'operational'
-				: data.apps.every((app) => app.status === 'down')
-					? 'down'
-					: 'degraded'
-	);
+	const appState = $derived(applicationState(data));
 	const checked = $derived(
 		snapshot
 			? new Intl.DateTimeFormat('id-ID', {
@@ -66,46 +54,6 @@
 	function label(status: string) {
 		return statusLabels[status as SystemStatus | 'unknown'];
 	}
-	onMount(() => {
-		let stopped = false;
-		let controller: AbortController | null = null;
-		async function refresh() {
-			controller?.abort();
-			const request = new AbortController();
-			controller = request;
-			const timeout = setTimeout(() => request.abort(), 10000);
-			try {
-				const response = await fetch('/status.json', { cache: 'no-store', signal: request.signal });
-				if (!response.ok) throw new Error('Status unavailable');
-				const body = await response.text();
-				if (body.length > 65536) throw new Error('Status too large');
-				const result = parseStatus(JSON.parse(body));
-				if (!stopped) {
-					snapshot = result;
-					now = Date.now();
-					failed = false;
-				}
-			} catch {
-				if (!stopped) {
-					failed = true;
-					now = Date.now();
-				}
-			} finally {
-				clearTimeout(timeout);
-			}
-		}
-		void refresh();
-		const polling = setInterval(() => void refresh(), 60000);
-		const aging = setInterval(() => {
-			now = Date.now();
-		}, 15000);
-		return () => {
-			stopped = true;
-			controller?.abort();
-			clearInterval(polling);
-			clearInterval(aging);
-		};
-	});
 </script>
 
 <section id="sistem" class="operations section-space">

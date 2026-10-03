@@ -1,6 +1,44 @@
 <script lang="ts">
 	import { ArrowUpRight, ArrowDown, Globe, Terminal } from '@lucide/svelte';
 	import { portalUrl } from '$lib/content';
+	import { applicationState, systemStatus } from '$lib/status-store';
+	import { statusLabels, type SystemStatus } from '$lib/status';
+	const data = $derived($systemStatus.data);
+	const checked = $derived($systemStatus.snapshot?.checkedAt);
+	const appState = $derived(applicationState(data));
+	const rows: { name: string; status: SystemStatus | 'unknown' }[] = $derived([
+		{ name: 'AKSES PUBLIK', status: data?.public.status ?? 'unknown' },
+		{ name: 'SERVER', status: data?.host.status ?? 'unknown' },
+		{ name: 'APLIKASI', status: appState },
+		{ name: 'DATABASE', status: data?.database.status ?? 'unknown' }
+	]);
+	const uptime = $derived(
+		data && data.apps.every((app) => app.uptimePercent !== null)
+			? Math.min(...data.apps.map((app) => app.uptimePercent!))
+			: null
+	);
+	const coverage = $derived(data ? Math.min(...data.apps.map((app) => app.coveragePercent)) : null);
+	const checkTime = $derived(
+		checked
+			? new Intl.DateTimeFormat('id-ID', {
+					timeZone: 'Asia/Jakarta',
+					hour: '2-digit',
+					minute: '2-digit',
+					second: '2-digit',
+					hourCycle: 'h23'
+				}).format(new Date(checked)) + ' WIB'
+			: '—'
+	);
+	const checkDate = $derived(
+		checked
+			? new Intl.DateTimeFormat('id-ID', {
+					timeZone: 'Asia/Jakarta',
+					day: '2-digit',
+					month: '2-digit',
+					year: 'numeric'
+				}).format(new Date(checked))
+			: 'Menunggu data'
+	);
 </script>
 
 <section id="beranda" class="hero section-shell">
@@ -44,22 +82,45 @@
 			</div>
 			<div class="terminal-panel">
 				<div class="terminal-heading mono">
-					<span><Terminal size={15} /> STATUS SISTEM</span><span class="demo-label">DATA DEMO</span>
+					<span><Terminal size={15} /> STATUS SISTEM</span><span class="demo-label"
+						>{$systemStatus.fresh ? 'LIVE' : checked ? 'DATA STALE' : 'MENUNGGU'}</span
+					>
 				</div>
 				<div class="terminal-body">
-					{#each ['NETWORK', 'DATACENTER', 'APPLICATIONS', 'SECURITY'] as item}<div
-							class="terminal-row mono"
-						>
-							<span>{item}</span><span><i></i>{item === 'SECURITY' ? 'AKTIF' : 'ONLINE'}</span>
+					{#each rows as item}<div class="terminal-row mono">
+							<span>{item.name}</span><span data-status={item.status}
+								><i aria-hidden="true"></i>{statusLabels[item.status]}</span
+							>
 						</div>{/each}
 					<div class="terminal-bottom">
-						<div><span class="mono">UPTIME</span><strong>99.98<span>%</span></strong></div>
+						<div>
+							<span class="mono">UPTIME APLIKASI · MIN</span><strong
+								>{uptime === null ? '—' : uptime.toFixed(2)}{#if uptime !== null}<span>%</span
+									>{/if}</strong
+							>
+						</div>
 						<div class="last-check mono">
-							LAST CHECK<br /><b>12:45:32 WIB</b><br /><span>CONTOH / 03.10.2026</span>
+							LAST CHECK<br /><b>{checkTime}</b><br /><span>{checkDate}</span>
 						</div>
 					</div>
+					<p class="terminal-coverage mono">
+						{coverage === null
+							? 'Data belum tersedia atau tidak terbaru.'
+							: `CAKUPAN MIN: ${coverage.toFixed(3)}% / 30 HARI`}
+					</p>
+					<noscript
+						><p class="terminal-coverage mono">
+							Aktifkan JavaScript untuk status terbaru.
+						</p></noscript
+					>
 				</div>
-				<div class="terminal-foot mono">&gt; SEMUA NODE TERHUBUNG<span class="cursor">_</span></div>
+				<a class="terminal-foot mono" href="#sistem"
+					>&gt; {!data
+						? 'STATUS BELUM DIKETAHUI'
+						: rows.every((row) => row.status === 'operational')
+							? 'PEMERIKSAAN NORMAL · LIHAT DETAIL'
+							: 'TERDAPAT GANGGUAN · LIHAT DETAIL'}<span class="cursor">_</span></a
+				>
 			</div>
 		</div>
 	</div>
