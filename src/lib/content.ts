@@ -57,12 +57,6 @@ export const services = [
 		color: 'lime'
 	}
 ];
-export const statistics = [
-	{ value: 99.98, suffix: '%', label: 'UPTIME SISTEM', decimals: 2 },
-	{ value: 24, suffix: '/7', label: 'OPERASIONAL IT', decimals: 0 },
-	{ value: 50, suffix: '+', label: 'SISTEM DIGITAL', decimals: 0 },
-	{ value: 100, suffix: '%', label: 'MONITORING KEAMANAN', decimals: 0 }
-];
 export const ecosystem = [
 	{
 		id: 'business',

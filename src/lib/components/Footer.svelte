@@ -1,6 +1,19 @@
 <script lang="ts">
 	import { ArrowUpRight } from '@lucide/svelte';
 	import { portalUrl } from '$lib/content';
+	import { systemStatus } from '$lib/status-store';
+	import { statusLabels } from '$lib/status';
+	const data = $derived($systemStatus.data);
+	const status = $derived(
+		!data
+			? 'unknown'
+			: data.apps.every((app) => app.status === 'operational') &&
+				  data.host.status === 'operational' &&
+				  data.database.status === 'operational' &&
+				  data.public.status === 'operational'
+				? 'operational'
+				: 'degraded'
+	);
 </script>
 
 <footer class="footer">
@@ -19,9 +32,12 @@
 					>{/each}
 			</nav>
 			<div class="footer-metadata mono">
-				<span><span class="status-dot"></span> STATUS: OPERASIONAL*</span><span
-					>VERSION: 2026.10</span
-				><span>REGION: ID</span><span>* DATA DEMO</span>
+				<a href="#sistem" data-status={status}
+					><span class="status-dot"></span>STATUS: {statusLabels[status]}</a
+				>
+				<span>PEMERIKSAAN SETIAP 60 DETIK</span><span>REGION: ID</span><span
+					>MONITOR DARI HOST YANG SAMA</span
+				>
 			</div>
 		</div>
 		<div class="footer-bottom mono">

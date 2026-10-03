@@ -34,5 +34,7 @@
 		</div>
 	</div>
 	<StatsGrid />
-	<p class="data-note mono">* Statistik merupakan data demo untuk ilustrasi kapabilitas.</p>
+	<p class="data-note mono">
+		Cakupan katalog aplikasi dan layanan. Satu aplikasi dapat tersedia melalui Web dan Mobile.
+	</p>
 </section>

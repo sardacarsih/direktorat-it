@@ -1486,10 +1486,27 @@ h2 {
 	align-items: start;
 	padding-top: 9px;
 }
-.footer-metadata > span:first-child {
+.footer-metadata > a:first-child {
 	display: flex;
 	gap: 8px;
 	align-items: center;
+	min-height: 44px;
+}
+.footer-metadata [data-status='operational'] {
+	color: #285e10;
+}
+.footer-metadata [data-status='unknown'] {
+	color: #5b5953;
+}
+.footer-metadata [data-status='degraded'] {
+	color: #805800;
+}
+.footer-metadata .status-dot {
+	background: currentColor;
+}
+.footer-metadata a:hover {
+	text-decoration: underline;
+	text-underline-offset: 4px;
 }
 .footer-bottom {
 	border-top: 1px solid #1114;
