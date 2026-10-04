@@ -1,5 +1,29 @@
 # Server deployment
 
+## Status setelah migrasi Cloudflare (4 Oktober 2026)
+
+Worker `direktorat-it` menyajikan website di
+`https://direktorat-it.ksk-it-developers.workers.dev/`; domain utama
+`it.kskgroup.web.id` diarahkan ke Worker melalui Custom Domain Cloudflare.
+Website lama di server SSH dinonaktifkan dengan HTTP 410 untuk semua halaman dan
+aset. Apache memakai `apache-monitoring-only.conf`; hanya `/status.json` tersedia
+melalui `https://it-origin.kskgroup.web.id/status.json` sebagai sumber metrik host
+dan riwayat lokal untuk Worker. `it-status.timer`, Apache, dan Cloudflare Tunnel tetap berjalan karena
+monitoring dan aplikasi lain masih memakainya.
+
+Panduan deployment statis Apache di bawah adalah untuk website lama. Menjalankan
+`install-release.sh` memasang kembali `apache.conf` dan mengaktifkan website lama.
+Untuk mempertahankan mode monitoring saja, gunakan `apache-monitoring-only.conf`
+di `/etc/httpd/conf.d/it-direktorat.conf`, periksa `httpd -t`, lalu reload Apache.
+
+`activate-monitoring-origin.sh` menambahkan ingress collector pada Tunnel yang
+ada dan ServerAlias Apache, memvalidasi kandidat, serta menyimpan backup kedua
+konfigurasi sebelum aktivasi. Karena SSH juga dapat memakai Tunnel, jalankan
+script melalui unit `systemd-run --collect`. DNS `it-origin` berupa CNAME proxied
+ke `441fba9d-666b-44eb-ac85-b2c44b0cfa42.cfargotunnel.com`. Worker memakai hostname
+ini pada `ORIGIN_STATUS_URL`. DNS domain utama dikelola Custom Domain Worker;
+jangan arahkan lagi ke Tunnel selama Worker dipakai untuk website.
+
 Target: SSH alias `eoffice-prod` dari konfigurasi SSH pengguna. Origin Oracle Linux 8.10 menggunakan Apache, dengan akses publik melalui Cloudflare Tunnel yang sudah ada.
 
 - Domain: `https://it.kskgroup.web.id`

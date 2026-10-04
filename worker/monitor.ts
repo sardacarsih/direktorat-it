@@ -6,7 +6,7 @@ import {
 	type SystemStatus
 } from '../src/lib/status.ts';
 
-export const ORIGIN_STATUS_URL = 'https://it.kskgroup.web.id/status.json';
+export const ORIGIN_STATUS_URL = 'https://it-origin.kskgroup.web.id/status.json';
 const MAX_BODY_BYTES = 65536;
 const PROBE_TIMEOUT_MS = 5000;
 type Probe = { ok: boolean; latencyMs: number | null };

@@ -46,12 +46,11 @@ tanpa konfirmasi tiga kegagalan dan tanpa riwayat uptime publik yang persisten.
 
 CPU/RAM/disk, status PostgreSQL, dan riwayat uptime lokal dibaca dari collector
 server asal melalui variabel `ORIGIN_STATUS_URL`, saat ini
-`https://it.kskgroup.web.id/status.json`. Timestamp collector dipertahankan dan
+`https://it-origin.kskgroup.web.id/status.json`. Timestamp collector dipertahankan dan
 kedaluwarsa terpisah setelah 3 menit. Jika collector tidak tersedia, metrik lokal
 ditandai belum diketahui sementara probe publik tetap berjalan. Riwayat lokal
-tidak diubah menjadi riwayat uptime publik. Jika domain `it.kskgroup.web.id`
-dipindahkan ke Worker ini, arahkan variabel tersebut ke hostname collector yang
-terpisah; permintaan rekursif ditolak. Pengembangan dan preview Vite menyediakan
+tidak diubah menjadi riwayat uptime publik. Hostname collector dipisahkan dari
+domain website `it.kskgroup.web.id`; permintaan rekursif ditolak. Pengembangan dan preview Vite menyediakan
 endpoint yang sama melalui middleware, dengan asal probe pada mesin development.
 
 Verifikasi tambahan:
@@ -71,7 +70,11 @@ Section Tentang menghitung jumlah aplikasi Web, Mobile, lokal, dan kapabilitas d
 
 ## Deployment server
 
-Website dipublikasikan pada **3 Oktober 2026** di [it.kskgroup.web.id](https://it.kskgroup.web.id). Server menyajikan build statis melalui Apache dan Cloudflare Tunnel. Panduan update serta rollback tersedia di [deploy/README.md](deploy/README.md).
+Website pertama kali dipublikasikan pada **3 Oktober 2026** melalui Apache dan
+Cloudflare Tunnel, lalu dipindahkan ke Cloudflare Workers pada **4 Oktober 2026**.
+Worker `direktorat-it` menyajikan website dan melakukan probe publik. Server SSH
+hanya menyediakan collector pada `it-origin.kskgroup.web.id/status.json` melalui
+Tunnel. Panduan konfigurasi dan rollback tersedia di [deploy/README.md](deploy/README.md).
 
 Verifikasi publik sebelumnya berhasil: HTTPS 200, konten HTML sesuai build lokal (Cloudflare dapat menambahkan skrip analitik), seluruh aset termuat, menu dan diagram berfungsi, tidak ada overflow pada desktop/mobile, cache aset immutable, serta kompresi gzip aktif. Panel dukungan tetap menggunakan mode demo.
 
