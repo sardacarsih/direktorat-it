@@ -171,7 +171,13 @@ export const localApplications: BusinessApplication[] = [
 		coverage: 'Setiap lokasi',
 		description:
 			'Aplikasi desktop akuntansi untuk pencatatan jurnal, General Ledger, pengelolaan akun, aset tetap dan penyusutan, serta laporan dan ekspor data.',
-		thumbnail: '/images/accounting.webp'
+		thumbnails: [
+			'/images/accounting.webp',
+			'/images/accounting-1.webp',
+			'/images/accounting-2.webp',
+			'/images/accounting-3.webp',
+			'/images/accounting-4.webp'
+		]
 	},
 	{
 		name: 'Finance',
@@ -216,7 +222,9 @@ export const localApplications: BusinessApplication[] = [
 		thumbnails: [
 			'/images/smartmill-scale-login.webp',
 			'/images/smartmill-scale-1.webp',
-			'/images/smartmill-scale-2.webp'
+			'/images/smartmill-scale-2.webp',
+			'/images/smartmill-scale-3.webp',
+			'/images/smartmill-scale-4.webp'
 		]
 	}
 ];
