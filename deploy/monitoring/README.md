@@ -41,7 +41,20 @@ Frontend juga perlu diuji dengan status terbaru, stale, down, payload invalid, H
 
 ## Monitoring di luar host
 
-Worker memeriksa domain HTTPS dari jaringan Cloudflare saat dashboard dimuat, dengan cache edge maksimal 30 detik dan polling browser setiap 60 detik. MOPS juga memiliki probe JSON health publik; aplikasi lain hanya diperiksa melalui HTTP halaman. Probe gagal langsung ditandai tidak tersedia untuk pemeriksaan tersebut. Belum ada penjadwalan probe publik tanpa pengunjung, penyimpanan riwayat uptime publik, atau notifikasi. Sistem lokal Accounting, Finance, Kasir, Inventory Lokal, HRIS Lokal, dan SmartMill Scale membutuhkan heartbeat dari lokasi masing-masing.
+Worker memeriksa domain HTTPS dari jaringan Cloudflare saat dashboard dimuat,
+dengan cache edge maksimal 30 detik dan polling browser setiap 60 detik. Field
+`publicHealthPath` pada config mengarahkan Agrinova, MOPS, eOfficePro, dan
+Purchasing dan Inventory ke `/health/live`. Respons harus HTTP sukses dengan
+Content-Type JSON dan `status: ok`; redirect dan HTML login ditolak. Liveness
+tidak membuktikan kesiapan dependensi atau fungsi bisnis. HRIS/OPAL memakai HTTP
+halaman. Halaman publik keenam aplikasi diperiksa secara terpisah dari liveness;
+kegagalan salah satunya tidak menimpa hasil yang lain. Probe gagal langsung
+ditandai tidak tersedia untuk pemeriksaan tersebut. Probe lokal collector dan
+riwayat SQLite tetap menggunakan checks lokal yang sudah ada; field
+`publicHealthPath` hanya dipakai Worker dan middleware development. Belum ada
+penjadwalan probe publik tanpa pengunjung, penyimpanan riwayat uptime publik, atau
+notifikasi. Sistem lokal Accounting, Finance, Kasir, Inventory Lokal, HRIS Lokal,
+dan SmartMill Scale membutuhkan heartbeat dari lokasi masing-masing.
 
 ## Rollback
 

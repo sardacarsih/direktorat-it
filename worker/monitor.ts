@@ -45,7 +45,7 @@ async function probe(url: string, fetcher: Fetcher, health = false): Promise<Pro
 	try {
 		const response = await fetcher(url, {
 			signal: controller.signal,
-			redirect: 'follow',
+			redirect: health ? 'error' : 'follow',
 			cache: 'no-store',
 			headers: { 'User-Agent': 'DirektoratIT-PublicMonitor/2.0', 'Cache-Control': 'no-cache' }
 		});
@@ -105,7 +105,9 @@ export async function collectPublicStatus(
 		originSnapshot(fetcher, originUrl),
 		Promise.all(
 			config.apps.map(async (app) => {
-				const healthUrl = app.id === 'mops' ? new URL('/healthz', app.publicUrl).href : null;
+				const healthUrl = app.publicHealthPath
+					? new URL(app.publicHealthPath, app.publicUrl).href
+					: null;
 				const [page, health] = await Promise.all([
 					probe(app.publicUrl, fetcher),
 					healthUrl ? probe(healthUrl, fetcher, true) : Promise.resolve(null)

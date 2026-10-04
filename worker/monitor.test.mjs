@@ -40,7 +40,10 @@ function fetcher(source, exceptions = {}) {
 			return Response.json(source);
 		}
 		if (exceptions[String(url)]) return exceptions[String(url)]();
-		if (String(url).endsWith('/healthz')) return Response.json({ status: 'ok' });
+		if (String(url).endsWith('/health/live')) {
+			assert.equal(options.redirect, 'error');
+			return Response.json({ status: 'ok' });
+		}
 		return new Response('<html>Login</html>', { headers: { 'Content-Type': 'text/html' } });
 	};
 }
@@ -56,7 +59,11 @@ test('public probes override same-host results while retaining independently dat
 	assert.ok(snapshot.apps.every((app) => app.status === 'operational'));
 	assert.ok(snapshot.apps.every((app) => app.uptimePercent === 40));
 	assert.equal(snapshot.apps.find((app) => app.id === 'mops').checkType, 'health');
-	assert.equal(snapshot.apps.find((app) => app.id === 'inventory').checkType, 'http');
+	assert.equal(snapshot.apps.find((app) => app.id === 'inventory').checkType, 'health');
+	assert.equal(snapshot.apps.find((app) => app.id === 'agrinova').checkType, 'health');
+	assert.equal(snapshot.apps.find((app) => app.id === 'eofficepro').checkType, 'health');
+	assert.equal(snapshot.apps.find((app) => app.id === 'hris').checkType, 'http');
+	assert.equal(snapshot.apps.find((app) => app.id === 'opal').checkType, 'http');
 });
 
 test('stale or malformed origin data does not prevent independent public checks', async () => {
@@ -73,7 +80,7 @@ test('stale or malformed origin data does not prevent independent public checks'
 test('HTML with HTTP 200 cannot pass JSON health checks; backend and page availability remain separate', async () => {
 	const snapshot = await collectPublicStatus(
 		fetcher(origin(), {
-			'https://mops.kskgroup.web.id/healthz': () => new Response('<html>Login</html>')
+			'https://mops.kskgroup.web.id/health/live': () => new Response('<html>Login</html>')
 		})
 	);
 	const app = snapshot.apps.find((app) => app.id === 'mops');
@@ -81,6 +88,32 @@ test('HTML with HTTP 200 cannot pass JSON health checks; backend and page availa
 	assert.equal(app.publicStatus, 'operational');
 	assert.equal(app.latencyMs, null);
 	assert.equal(snapshot.public.available, 6);
+});
+
+test('all four liveness endpoints require JSON status ok independently of page availability', async () => {
+	for (const id of ['agrinova', 'mops', 'eofficepro', 'inventory']) {
+		const app = config.apps.find((candidate) => candidate.id === id);
+		const healthUrl = new URL('/health/live', app.publicUrl).href;
+		for (const response of [
+			() => Response.json({ status: 'down' }),
+			() => Response.json({ status: 'ok' }, { status: 503 }),
+			() => new Response('{"status":"ok"}', { headers: { 'Content-Type': 'text/html' } }),
+			() => new Response('<html>Login</html>', { headers: { 'Content-Type': 'text/html' } })
+		]) {
+			const snapshot = await collectPublicStatus(fetcher(origin(), { [healthUrl]: response }));
+			const result = snapshot.apps.find((candidate) => candidate.id === id);
+			assert.equal(result.status, 'down');
+			assert.equal(result.checkType, 'health');
+			assert.equal(result.publicStatus, 'operational');
+			assert.equal(result.latencyMs, null);
+			assert.equal(snapshot.public.available, 6);
+			assert.ok(
+				snapshot.apps
+					.filter((candidate) => candidate.id !== id)
+					.every((candidate) => candidate.status === 'operational')
+			);
+		}
+	}
 });
 
 test('origin network failure and an unavailable public app do not discard other probe results', async () => {
@@ -92,7 +125,8 @@ test('origin network failure and an unavailable public app do not discard other 
 	});
 	assert.equal(snapshot.public.status, 'degraded');
 	assert.equal(snapshot.public.available, 5);
-	assert.equal(snapshot.apps.find((app) => app.id === 'agrinova').status, 'down');
+	assert.equal(snapshot.apps.find((app) => app.id === 'agrinova').status, 'operational');
+	assert.equal(snapshot.apps.find((app) => app.id === 'agrinova').publicStatus, 'down');
 	assert.equal(snapshot.host, null);
 });
 

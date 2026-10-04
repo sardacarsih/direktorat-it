@@ -35,9 +35,12 @@ Flag `--bun` memastikan CLI menggunakan runtime Bun. Build menghasilkan direktor
 `wrangler.jsonc` menyajikan aset `build/` dan menjalankan `worker/index.ts` untuk
 `GET /status.json`. Pengaturan build Cloudflare: `bun run build`, deploy
 `npx wrangler deploy`, root `/`. Worker melakukan probe HTTPS dari jaringan
-Cloudflare ke domain publik keenam aplikasi. MOPS juga memvalidasi JSON
-`https://mops.kskgroup.web.id/healthz`; aplikasi lainnya hanya memeriksa respons
-HTTP halaman publik, bukan kesehatan seluruh fungsi bisnis atau database.
+Cloudflare ke domain publik keenam aplikasi. Agrinova, MOPS, eOfficePro, dan
+Purchasing dan Inventory memakai `/health/live` pada domain publik masing-masing.
+Probe liveness mensyaratkan respons HTTP sukses, Content-Type JSON, dan
+`status: ok`; redirect atau HTML halaman login ditolak. HRIS/OPAL hanya memeriksa
+HTTP halaman publik. Liveness tidak membuktikan kesiapan dependensi, database,
+atau seluruh fungsi bisnis. Respons halaman HTTPS tetap diperiksa secara terpisah.
 
 Browser memanggil endpoint setiap 60 detik selama dashboard terbuka. Worker
 berbagi hasil probe melalui cache edge maksimal 30 detik; respons ke browser

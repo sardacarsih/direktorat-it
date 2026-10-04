@@ -8,14 +8,16 @@
 				{ "url": "http://127.0.0.1:8080/health", "json": { "status": "ok" } },
 				{ "url": "http://127.0.0.1:3000/login" }
 			],
-			"publicUrl": "https://agrinova.kskgroup.web.id"
+			"publicUrl": "https://agrinova.kskgroup.web.id",
+			"publicHealthPath": "/health/live"
 		},
 		{
 			"id": "mops",
 			"name": "MOPS",
 			"services": ["mops"],
 			"checks": [{ "url": "http://127.0.0.1:3001/healthz", "json": { "status": "ok" } }],
-			"publicUrl": "https://mops.kskgroup.web.id"
+			"publicUrl": "https://mops.kskgroup.web.id",
+			"publicHealthPath": "/health/live"
 		},
 		{
 			"id": "eofficepro",
@@ -28,7 +30,8 @@
 				},
 				{ "url": "http://127.0.0.1:3333/login" }
 			],
-			"publicUrl": "https://eofficepro.kskgroup.web.id"
+			"publicUrl": "https://eofficepro.kskgroup.web.id",
+			"publicHealthPath": "/health/live"
 		},
 		{
 			"id": "inventory",
@@ -38,7 +41,8 @@
 				{ "url": "http://127.0.0.1:8442/ready", "json": { "status": "READY" } },
 				{ "url": "http://127.0.0.1:8441/login" }
 			],
-			"publicUrl": "https://inventori.kskgroup.web.id"
+			"publicUrl": "https://inventori.kskgroup.web.id",
+			"publicHealthPath": "/health/live"
 		},
 		{
 			"id": "hris",

@@ -143,7 +143,7 @@
 										>{app.checkType === 'http'
 											? 'HTTP halaman · fungsi bisnis belum diuji'
 											: external
-												? 'Endpoint health publik'
+												? 'Liveness aplikasi · HTTPS publik'
 												: 'Service + endpoint health'}</small
 									></th
 								>
@@ -192,7 +192,8 @@
 			<span>METRIK & RIWAYAT LOKAL DARI COLLECTOR SERVER ASAL</span>
 		</div>
 		<p class="monitor-message">
-			Probe publik memeriksa respons HTTPS, bukan seluruh fungsi bisnis. CPU, RAM, disk, database,
+			Probe publik memeriksa liveness aplikasi dan respons halaman HTTPS, bukan kesiapan dependensi
+			atau seluruh fungsi bisnis. CPU, RAM, disk, database,
 			uptime, dan riwayat lokal berasal dari collector server asal; data yang lebih lama dari 3
 			menit ditandai belum diketahui. Riwayat uptime publik belum disimpan. Status sistem lokal di
 			site lain belum dipantau.
