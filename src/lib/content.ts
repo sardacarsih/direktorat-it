@@ -229,8 +229,12 @@ export const technologies = [
 	'DOCKER',
 	'KUBERNETES',
 	'LINUX',
-	'GRAFANA',
 	'GITHUB',
+	'REACT',
+	'NEXT.JS',
+	'SVELTE',
+	'BUN',
+	'NODE.JS',
 	'WEB',
 	'MOBILE',
 	'API'
