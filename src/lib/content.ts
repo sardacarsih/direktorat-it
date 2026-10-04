@@ -223,11 +223,11 @@ export const localApplications: BusinessApplication[] = [
 
 export const technologies = [
 	'GO',
+	'C#',
 	'POSTGRESQL',
 	'ORACLE',
 	'REDIS',
 	'DOCKER',
-	'KUBERNETES',
 	'LINUX',
 	'GITHUB',
 	'REACT',

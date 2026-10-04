@@ -1,11 +1,10 @@
 <script lang="ts">
-	import { Database, Globe, Smartphone, Webhook } from '@lucide/svelte';
+	import { Braces, Database, Globe, Smartphone, Webhook } from '@lucide/svelte';
 	import {
 		siGo,
 		siPostgresql,
 		siRedis,
 		siDocker,
-		siKubernetes,
 		siLinux,
 		siGithub,
 		siReact,
@@ -22,7 +21,6 @@
 		POSTGRESQL: siPostgresql.path,
 		REDIS: siRedis.path,
 		DOCKER: siDocker.path,
-		KUBERNETES: siKubernetes.path,
 		LINUX: siLinux.path,
 		GITHUB: siGithub.path,
 		REACT: siReact.path,
@@ -33,6 +31,7 @@
 	};
 
 	const genericIcons: Record<string, typeof Globe> = {
+		'C#': Braces,
 		ORACLE: Database,
 		WEB: Globe,
 		MOBILE: Smartphone,
