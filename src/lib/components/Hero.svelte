@@ -6,6 +6,8 @@
 	const data = $derived($systemStatus.data);
 	const checked = $derived($systemStatus.snapshot?.checkedAt);
 	const appState = $derived(applicationState(data));
+	const scheduled = $derived(data?.version === 3);
+	const histories = $derived(data?.apps.map((app) => (scheduled ? app.publicHistory! : app)));
 	const rows: { name: string; status: SystemStatus | 'unknown' }[] = $derived([
 		{ name: 'AKSES PUBLIK', status: data?.public.status ?? 'unknown' },
 		{ name: 'SERVER', status: data?.host?.status ?? 'unknown' },
@@ -13,11 +15,13 @@
 		{ name: 'DATABASE', status: data?.database?.status ?? 'unknown' }
 	]);
 	const uptime = $derived(
-		data && data.apps.every((app) => app.uptimePercent !== null)
-			? Math.min(...data.apps.map((app) => app.uptimePercent!))
+		histories && histories.every((app) => app.uptimePercent !== null)
+			? Math.min(...histories.map((app) => app.uptimePercent!))
 			: null
 	);
-	const coverage = $derived(data ? Math.min(...data.apps.map((app) => app.coveragePercent)) : null);
+	const coverage = $derived(
+		histories ? Math.min(...histories.map((app) => app.coveragePercent)) : null
+	);
 	const checkTime = $derived(
 		checked
 			? new Intl.DateTimeFormat('id-ID', {
@@ -94,7 +98,7 @@
 						</div>{/each}
 					<div class="terminal-bottom">
 						<div>
-							<span class="mono">UPTIME LOKAL · MIN</span><strong
+							<span class="mono">UPTIME {scheduled ? 'PUBLIK' : 'LOKAL'} · MIN</span><strong
 								>{uptime === null ? '—' : uptime.toFixed(2)}{#if uptime !== null}<span>%</span
 									>{/if}</strong
 							>

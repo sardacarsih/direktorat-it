@@ -3,12 +3,13 @@
 Collector Python 3.6+ memeriksa layanan dan endpoint lokal serta HTTPS publik setiap 60 detik. Tidak ada kredensial aplikasi yang digunakan. Status publik berasal dari host yang sama, bukan monitor independen. HRIS/OPAL hanya memeriksa HTTP halaman dan service web; fungsi bisnis/database kedua aplikasi belum diuji.
 
 Deployment Cloudflare Workers memakai endpoint `/status.json` dari
-`worker/index.ts` untuk menjalankan probe HTTPS publik independen. Collector
+`worker/index.ts` untuk membaca snapshot probe HTTPS publik terjadwal. Collector
 Python tetap menjadi sumber metrik host, status PostgreSQL, dan riwayat uptime
 lokal melalui `ORIGIN_STATUS_URL`. Worker tidak mengubah atau menambah sampel
 SQLite. Snapshot Worker versi 2 memisahkan `checkedAt` probe publik dan
 `originCheckedAt` collector; metrik lokal lebih lama dari 3 menit menjadi null.
-Snapshot collector versi 1 tetap didukung untuk deployment Apache.
+Snapshot collector versi 1 tetap didukung untuk deployment Apache. Produksi
+Cloudflare menggunakan snapshot versi 3 dengan riwayat publik terpisah.
 
 - Empat aplikasi menggunakan endpoint health; eOfficePro juga memvalidasi respons dependensi, Purchasing dan Inventory menggunakan readiness.
 - PostgreSQL memakai `pg_isready`: menerima koneksi, bukan bukti seluruh query bisnis berhasil.
@@ -41,20 +42,56 @@ Frontend juga perlu diuji dengan status terbaru, stale, down, payload invalid, H
 
 ## Monitoring di luar host
 
-Worker memeriksa domain HTTPS dari jaringan Cloudflare saat dashboard dimuat,
-dengan cache edge maksimal 30 detik dan polling browser setiap 60 detik. Field
+Cron Trigger `* * * * *` memeriksa domain HTTPS dari jaringan Cloudflare setiap
+menit tanpa pengunjung. Satu Durable Object SQLite `PublicMonitor` menyimpan
+snapshot, counter dan sampel; browser membaca snapshot setiap 60 detik tanpa
+cache. Field
 `publicHealthPath` pada config mengarahkan Agrinova, MOPS, eOfficePro, dan
 Purchasing dan Inventory ke `/health/live`. Respons harus HTTP sukses dengan
 Content-Type JSON dan `status: ok`; redirect dan HTML login ditolak. Liveness
 tidak membuktikan kesiapan dependensi atau fungsi bisnis. HRIS/OPAL memakai HTTP
 halaman. Halaman publik keenam aplikasi diperiksa secara terpisah dari liveness;
-kegagalan salah satunya tidak menimpa hasil yang lain. Probe gagal langsung
-ditandai tidak tersedia untuk pemeriksaan tersebut. Probe lokal collector dan
+kegagalan salah satunya tidak menimpa hasil yang lain. Status DOWN dikonfirmasi
+setelah 3 kegagalan pada slot menit berurutan; pemulihan memerlukan 2 keberhasilan.
+Kegagalan awal ditandai terganggu. Saat baru dipasang, 2 keberhasilan diperlukan
+untuk menetapkan baseline sehat. Slot yang terlewat memutus streak; retry Cron
+dan reload halaman tidak menambah sampel dalam slot yang sama. Snapshot pertama
+belum tersedia sampai Cron pertama berjalan (HTTP 503); timestamp lebih lama
+dari 3 menit menghasilkan status belum diketahui tanpa menjalankan probe dari
+permintaan browser. Cron baru dapat memerlukan hingga 15 menit untuk propagasi.
+Probe lokal collector dan
 riwayat SQLite tetap menggunakan checks lokal yang sudah ada; field
 `publicHealthPath` hanya dipakai Worker dan middleware development. Belum ada
-penjadwalan probe publik tanpa pengunjung, penyimpanan riwayat uptime publik, atau
-notifikasi. Sistem lokal Accounting, Finance, Kasir, Inventory Lokal, HRIS Lokal,
+riwayat publik pada middleware Vite; pengujian Cron menggunakan Wrangler.
+Sistem lokal Accounting, Finance, Kasir, Inventory Lokal, HRIS Lokal,
 dan SmartMill Scale membutuhkan heartbeat dari lokasi masing-masing.
+
+### Riwayat dan notifikasi publik
+
+Sampel mentah liveness dan halaman disimpan 30 hari. Persentase uptime publik
+adalah jumlah sampel liveness berhasil / sampel yang ada; cakupan adalah jumlah
+sampel / 43.200. Jeda tidak diisi dengan sampel buatan. Dashboard menampilkan 24
+sampel terakhir dan 12 perubahan status terkonfirmasi terakhir. Metrik dan
+riwayat lokal tetap tersimpan terpisah dan kedaluwarsa secara independen.
+
+Notifikasi memakai binding Cloudflare `send_email` bernama `EMAIL`, dengan
+`ALERT_EMAIL_FROM` dari domain pengirim terverifikasi dan `ALERT_EMAIL_TO` sebagai
+penerima terverifikasi. Simpan alamat sebagai secret/variabel Worker; jangan
+menambahkan endpoint pengiriman email publik. Batasi binding pada penerima yang
+ditetapkan. Tidak perlu memindahkan MX domain perusahaan ke Cloudflare untuk
+sekadar mengaktifkan probe terjadwal.
+
+Perubahan ke DOWN dan pulih masuk outbox persisten. Maksimal 10 email dikirim per
+siklus, retry memakai backoff 1 menit sampai 1 jam; event kedaluwarsa setelah 30
+hari. Pengiriman bersifat at-least-once: kegagalan setelah provider menerima
+email dapat menghasilkan duplikat; `X-Monitor-Event-ID` tetap sama pada retry.
+Snapshot publik tidak memuat alamat email atau credential provider.
+
+Jalankan `bun run test:monitoring`, `bun run check:worker`, `bun run check`, dan
+`bun run build`. Untuk runtime lokal, gunakan `wrangler dev --test-scheduled`
+dan panggil `/__scheduled?cron=*+*+*+*+*`; akses `/status.json` biasa tidak menjalankan
+probe. Jangan memakai endpoint simulasi atau menghentikan aplikasi produksi
+untuk menguji ambang gangguan.
 
 ## Rollback
 

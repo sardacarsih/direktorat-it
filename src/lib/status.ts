@@ -1,4 +1,20 @@
 export type SystemStatus = 'operational' | 'degraded' | 'down';
+export type PublicHistory = {
+	uptimePercent: number | null;
+	sampleCount: number;
+	coveragePercent: number;
+	since: string | null;
+	history: boolean[];
+};
+export type MonitorEvent = {
+	id: string;
+	at: string;
+	appId: string;
+	name: string;
+	check: 'application' | 'page';
+	status: 'operational' | 'down';
+	delivered: boolean;
+};
 export type ApplicationStatus = {
 	id: string;
 	name: string;
@@ -12,9 +28,17 @@ export type ApplicationStatus = {
 	coveragePercent: number;
 	since: string | null;
 	history: boolean[];
+	publicHistory?: PublicHistory;
 };
 export type StatusSnapshot = {
-	version: 1 | 2;
+	version: 1 | 2 | 3;
+	monitoring?: {
+		intervalSeconds: 60;
+		failureThreshold: 3;
+		recoveryThreshold: 2;
+		notificationConfigured: boolean;
+		events: MonitorEvent[];
+	};
 	checkedAt: string;
 	windowDays: number;
 	probeLocation: 'same-host' | 'cloudflare' | 'development';
@@ -43,14 +67,47 @@ export function parseStatus(value: unknown): StatusSnapshot {
 	const latency = (v: unknown) =>
 		v === null || (typeof v === 'number' && Number.isFinite(v) && v >= 0);
 	const timestamp = (v: unknown) => typeof v === 'string' && Number.isFinite(Date.parse(v));
+	const publicHistory = (v: PublicHistory | undefined) =>
+		v &&
+		(v.uptimePercent === null || percentage(v.uptimePercent)) &&
+		Number.isInteger(v.sampleCount) &&
+		v.sampleCount >= 0 &&
+		v.sampleCount <= 43200 &&
+		percentage(v.coveragePercent) &&
+		(v.since === null || timestamp(v.since)) &&
+		Array.isArray(v.history) &&
+		v.history.length <= 24 &&
+		v.history.every((ok) => typeof ok === 'boolean');
 	const data = value as StatusSnapshot;
 	const legacy = data?.version === 1;
 	if (
 		!data ||
-		![1, 2].includes(data.version) ||
+		![1, 2, 3].includes(data.version) ||
 		!timestamp(data.checkedAt) ||
 		Date.parse(data.checkedAt) > Date.now() + 60000 ||
 		data.windowDays !== 30 ||
+		(data.version === 3 &&
+			(data.probeLocation !== 'cloudflare' ||
+				!data.monitoring ||
+				data.monitoring.intervalSeconds !== 60 ||
+				data.monitoring.failureThreshold !== 3 ||
+				data.monitoring.recoveryThreshold !== 2 ||
+				typeof data.monitoring.notificationConfigured !== 'boolean' ||
+				!Array.isArray(data.monitoring.events) ||
+				data.monitoring.events.length > 12 ||
+				!data.monitoring.events.every(
+					(event) =>
+						event &&
+						typeof event.id === 'string' &&
+						event.id.length <= 100 &&
+						timestamp(event.at) &&
+						typeof event.appId === 'string' &&
+						typeof event.name === 'string' &&
+						event.name.length <= 60 &&
+						['application', 'page'].includes(event.check) &&
+						['operational', 'down'].includes(event.status) &&
+						typeof event.delivered === 'boolean'
+				))) ||
 		(legacy
 			? data.probeLocation !== 'same-host' || data.externalMonitor !== false
 			: !['cloudflare', 'development'].includes(data.probeLocation) ||
@@ -66,6 +123,7 @@ export function parseStatus(value: unknown): StatusSnapshot {
 				app &&
 				typeof app.id === 'string' &&
 				typeof app.name === 'string' &&
+				(data.version !== 3 || publicHistory(app.publicHistory)) &&
 				app.name.length <= 60 &&
 				status(app.status) &&
 				status(app.publicStatus) &&

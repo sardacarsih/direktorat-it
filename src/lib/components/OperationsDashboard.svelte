@@ -7,6 +7,19 @@
 	const fresh = $derived($systemStatus.fresh);
 	const data = $derived($systemStatus.data);
 	const external = $derived(snapshot?.externalMonitor ?? true);
+	const scheduled = $derived(snapshot?.version === 3);
+	function historyFor(app: import('$lib/status').ApplicationStatus) {
+		return scheduled ? app.publicHistory! : app;
+	}
+	function eventTime(at: string) {
+		return (
+			new Intl.DateTimeFormat('id-ID', {
+				timeZone: 'Asia/Jakarta',
+				dateStyle: 'short',
+				timeStyle: 'medium'
+			}).format(new Date(at)) + ' WIB'
+		);
+	}
 	const probeLabel = $derived(
 		snapshot?.probeLocation === 'development' ? 'host development' : 'Cloudflare'
 	);
@@ -91,8 +104,9 @@
 		</p>
 		{#if external}
 			<p class="monitor-message">
-				Probe publik: {probeLabel} · diperiksa saat dashboard dimuat dan diperbarui setiap 60 detik. Data
-				server asal: {originChecked}.
+				Probe publik: {probeLabel} · {scheduled
+					? 'berjalan terjadwal setiap 60 detik, termasuk saat dashboard tidak dibuka'
+					: 'diperiksa saat dashboard dimuat dan diperbarui setiap 60 detik'}. Data server asal: {originChecked}.
 			</p>
 		{/if}
 		<noscript
@@ -122,7 +136,9 @@
 				<table class="status-table">
 					<caption
 						>{external
-							? `Hasil probe HTTPS dari ${probeLabel}; uptime dan riwayat berasal dari sampel lokal server asal selama 30 hari.`
+							? scheduled
+								? `Uptime publik berdasarkan sampel HTTPS terjadwal selama 30 hari; jeda pemeriksaan ditunjukkan melalui cakupan.`
+								: `Hasil probe HTTPS dari ${probeLabel}; uptime dan riwayat berasal dari sampel lokal server asal selama 30 hari.`
 							: 'Hasil pemeriksaan lokal dan HTTPS publik; uptime berdasarkan sampel lokal selama 30 hari terakhir.'}</caption
 					>
 					<thead
@@ -131,12 +147,14 @@
 								>{external ? 'Probe publik' : 'Lokal'}</th
 							><th scope="col">Halaman HTTPS</th><th scope="col"
 								>{external ? 'Respons publik' : 'Respons lokal'}</th
-							><th scope="col">Uptime lokal</th><th scope="col">24 pemeriksaan lokal terakhir</th
+							><th scope="col">Uptime {scheduled ? 'publik' : 'lokal'}</th><th scope="col"
+								>24 pemeriksaan {scheduled ? 'publik' : 'lokal'} terakhir</th
 							></tr
 						></thead
 					>
 					<tbody>
 						{#each data?.apps ?? snapshot?.apps ?? [] as app}
+							{@const observed = historyFor(app)}
 							<tr>
 								<th scope="row"
 									>{app.name}<small
@@ -161,19 +179,20 @@
 								>
 								<td>{fresh && app.latencyMs !== null ? `${app.latencyMs} ms` : '—'}</td>
 								<td
-									>{fresh && app.uptimePercent !== null
-										? `${app.uptimePercent.toFixed(2)}%`
+									>{fresh && observed.uptimePercent !== null
+										? `${observed.uptimePercent.toFixed(2)}%`
 										: '—'}<small
-										>{app.sampleCount} sampel lokal · cakupan {app.coveragePercent.toFixed(3)}% / 30
-										hari</small
+										>{observed.sampleCount} sampel {scheduled ? 'publik' : 'lokal'} · cakupan {observed.coveragePercent.toFixed(
+											3
+										)}% / 30 hari</small
 									></td
 								>
 								<td
 									><div
 										class="status-history"
-										aria-label={`Riwayat lokal ${app.name}: ${app.history.filter(Boolean).length} dari ${app.history.length} pemeriksaan berhasil`}
+										aria-label={`Riwayat ${scheduled ? 'publik' : 'lokal'} ${app.name}: ${observed.history.filter(Boolean).length} dari ${observed.history.length} pemeriksaan berhasil`}
 									>
-										{#each app.history as ok}<span class:check-failed={!ok} aria-hidden="true"
+										{#each observed.history as ok}<span class:check-failed={!ok} aria-hidden="true"
 											></span>{/each}
 									</div></td
 								>
@@ -183,6 +202,34 @@
 				</table>
 			</div>
 		</div>
+		{#if scheduled}
+			<p class="monitor-message">
+				Tidak tersedia setelah 3 kegagalan berturut-turut; pulih setelah 2 keberhasilan. Kegagalan
+				awal ditandai terganggu. Uptime menggunakan hasil setiap probe, termasuk kegagalan yang
+				belum terkonfirmasi.
+			</p>
+			<div class="monitored-apps">
+				<h3>Perubahan status terkonfirmasi</h3>
+				<p class="monitor-message">
+					{snapshot?.monitoring?.notificationConfigured
+						? 'Notifikasi email perubahan status aktif.'
+						: 'Notifikasi email belum aktif; layanan pengiriman dan domain pengirim Cloudflare perlu disiapkan.'}
+				</p>
+				{#if snapshot?.monitoring?.events.length}
+					<ul>
+						{#each snapshot.monitoring.events as event}<li>
+								{eventTime(event.at)} · {event.name} · {event.check === 'page'
+									? 'Halaman HTTPS'
+									: 'Aplikasi'}: {label(event.status)} · {event.delivered
+									? 'notifikasi terkirim'
+									: 'notifikasi menunggu pengiriman'}
+							</li>{/each}
+					</ul>
+				{:else}<p class="monitor-message">
+						Belum ada perubahan status terkonfirmasi sejak monitoring terjadwal dimulai.
+					</p>{/if}
+			</div>
+		{/if}
 		<div class="ops-footer mono">
 			<span
 				>{external
@@ -193,10 +240,10 @@
 		</div>
 		<p class="monitor-message">
 			Probe publik memeriksa liveness aplikasi dan respons halaman HTTPS, bukan kesiapan dependensi
-			atau seluruh fungsi bisnis. CPU, RAM, disk, database,
-			uptime, dan riwayat lokal berasal dari collector server asal; data yang lebih lama dari 3
-			menit ditandai belum diketahui. Riwayat uptime publik belum disimpan. Status sistem lokal di
-			site lain belum dipantau.
+			atau seluruh fungsi bisnis. CPU, RAM, disk, database, uptime, dan riwayat lokal berasal dari
+			collector server asal; data yang lebih lama dari 3 menit ditandai belum diketahui. {scheduled
+				? 'Riwayat publik disimpan selama 30 hari; uptime adalah proporsi sampel berhasil, bukan pengukuran durasi gangguan yang presisi.'
+				: 'Riwayat uptime publik belum disimpan.'} Status sistem lokal di site lain belum dipantau.
 		</p>
 	</div>
 </section>
