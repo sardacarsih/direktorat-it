@@ -2,7 +2,7 @@
 
 Collector Python 3.6+ memeriksa layanan dan endpoint lokal serta HTTPS publik setiap 60 detik. Tidak ada kredensial aplikasi yang digunakan. Status publik berasal dari host yang sama, bukan monitor independen. HRIS/OPAL hanya memeriksa HTTP halaman dan service web; fungsi bisnis/database kedua aplikasi belum diuji.
 
-- Empat aplikasi menggunakan endpoint health; eOfficePro juga memvalidasi respons dependensi, Inventory menggunakan readiness.
+- Empat aplikasi menggunakan endpoint health; eOfficePro juga memvalidasi respons dependensi, Purchasing dan Inventory menggunakan readiness.
 - PostgreSQL memakai `pg_isready`: menerima koneksi, bukan bukti seluruh query bisnis berhasil.
 - CPU diukur selama 200 ms; RAM menggunakan MemAvailable; disk mengambil persentase tertinggi antara `/` dan `/apps`. Salah satu penggunaan mencapai 90% berarti resource terganggu.
 - Kegagalan pertama/kedua menjadi terganggu; ketiga berturut-turut menjadi tidak tersedia. Pemeriksaan sukses langsung memulihkan status.

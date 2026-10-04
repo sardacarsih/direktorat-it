@@ -152,11 +152,11 @@ export const businessApplications: BusinessApplication[] = [
 			'Sistem surat menyurat internal digital untuk pembuatan surat berbasis template, persetujuan berjenjang, disposisi, pelacakan status, dan pencarian arsip melalui web dan aplikasi Android.'
 	},
 	{
-		name: 'Inventory',
+		name: 'Purchasing dan Inventory',
 		platforms: ['Web', 'Mobile'],
 		url: 'https://inventori.kskgroup.web.id',
 		description:
-			'Sistem inventori terpusat untuk pengelolaan master barang, pemantauan saldo stok antar lokasi, permintaan dan penerimaan barang divisi, serta sinkronisasi data dengan sistem lokal.'
+			'Sistem purchasing dan inventory terpusat untuk pengelolaan pengadaan dan master barang, pemantauan saldo stok antar lokasi, permintaan dan penerimaan barang divisi, serta sinkronisasi data dengan sistem lokal.'
 	},
 	{ name: 'HRIS', platforms: ['Web', 'Mobile'], url: 'https://hris.kskgroup.web.id' },
 	{ name: 'OPAL', platforms: ['Web', 'Mobile'], url: 'https://opal.kskgroup.web.id' }
@@ -187,7 +187,8 @@ export const localApplications: BusinessApplication[] = [
 		name: 'Inventory Lokal',
 		platforms: ['Lokal'],
 		coverage: 'Setiap lokasi',
-		description: 'Sistem inventori lokal untuk operasional gudang di setiap lokasi.'
+		description:
+			'Sistem inventori lokal untuk operasional gudang yang terintegrasi dengan Global Items melalui agent di setiap site. Agent menyinkronkan perubahan master barang dari pusat ke database lokal. Operasional tetap berjalan saat koneksi terputus dan sinkronisasi dilanjutkan saat koneksi pulih.'
 	},
 	{ name: 'HRIS Lokal', platforms: ['Lokal'], coverage: 'Setiap lokasi' },
 	{

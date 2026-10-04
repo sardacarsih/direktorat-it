@@ -32,7 +32,7 @@
 		},
 		{
 			"id": "inventory",
-			"name": "Inventory",
+			"name": "Purchasing dan Inventory",
 			"services": ["inventory-central-api", "inventory-web-admin"],
 			"checks": [
 				{ "url": "http://127.0.0.1:8442/ready", "json": { "status": "READY" } },
