@@ -8,11 +8,16 @@
 		!data
 			? 'unknown'
 			: data.apps.every((app) => app.status === 'operational') &&
-				  data.host.status === 'operational' &&
-				  data.database.status === 'operational' &&
+				  data.host?.status === 'operational' &&
+				  data.database?.status === 'operational' &&
 				  data.public.status === 'operational'
 				? 'operational'
-				: 'degraded'
+				: data.apps.some((app) => app.status !== 'operational') ||
+					  data.public.status !== 'operational' ||
+					  (data.host && data.host.status !== 'operational') ||
+					  (data.database && data.database.status !== 'operational')
+					? 'degraded'
+					: 'unknown'
 	);
 </script>
 
@@ -36,7 +41,11 @@
 					><span class="status-dot"></span>STATUS: {statusLabels[status]}</a
 				>
 				<span>PEMERIKSAAN SETIAP 60 DETIK</span><span>REGION: ID</span><span
-					>MONITOR DARI HOST YANG SAMA</span
+					>{$systemStatus.snapshot?.externalMonitor === false
+						? 'MONITOR DARI HOST APLIKASI'
+						: $systemStatus.snapshot?.probeLocation === 'development'
+							? 'MONITOR PUBLIK DARI HOST DEVELOPMENT'
+							: 'MONITOR PUBLIK DARI CLOUDFLARE'}</span
 				>
 			</div>
 		</div>

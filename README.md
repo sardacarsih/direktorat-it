@@ -30,11 +30,42 @@ Development: http://127.0.0.1:5173. Preview build produksi: http://127.0.0.1:417
 
 Flag `--bun` memastikan CLI menggunakan runtime Bun. Build menghasilkan direktori `build/` yang dapat disajikan oleh hosting statis tanpa server aplikasi.
 
+## Cloudflare Workers dan monitoring publik
+
+`wrangler.jsonc` menyajikan aset `build/` dan menjalankan `worker/index.ts` untuk
+`GET /status.json`. Pengaturan build Cloudflare: `bun run build`, deploy
+`npx wrangler deploy`, root `/`. Worker melakukan probe HTTPS dari jaringan
+Cloudflare ke domain publik keenam aplikasi. MOPS juga memvalidasi JSON
+`https://mops.kskgroup.web.id/healthz`; aplikasi lainnya hanya memeriksa respons
+HTTP halaman publik, bukan kesehatan seluruh fungsi bisnis atau database.
+
+Browser memanggil endpoint setiap 60 detik selama dashboard terbuka. Worker
+berbagi hasil probe melalui cache edge maksimal 30 detik; respons ke browser
+tetap `no-store`. Probe gagal ditandai tidak tersedia pada pemeriksaan tersebut,
+tanpa konfirmasi tiga kegagalan dan tanpa riwayat uptime publik yang persisten.
+
+CPU/RAM/disk, status PostgreSQL, dan riwayat uptime lokal dibaca dari collector
+server asal melalui variabel `ORIGIN_STATUS_URL`, saat ini
+`https://it.kskgroup.web.id/status.json`. Timestamp collector dipertahankan dan
+kedaluwarsa terpisah setelah 3 menit. Jika collector tidak tersedia, metrik lokal
+ditandai belum diketahui sementara probe publik tetap berjalan. Riwayat lokal
+tidak diubah menjadi riwayat uptime publik. Jika domain `it.kskgroup.web.id`
+dipindahkan ke Worker ini, arahkan variabel tersebut ke hostname collector yang
+terpisah; permintaan rekursif ditolak. Pengembangan dan preview Vite menyediakan
+endpoint yang sama melalui middleware, dengan asal probe pada mesin development.
+
+Verifikasi tambahan:
+
+```powershell
+bun run check:worker
+bun run test:monitoring
+```
+
 ## Konten dan integrasi
 
 Ubah konten contoh melalui `src/lib/content.ts`. Komponen berada di `src/lib/components/` dan token visual serta breakpoint di `src/app.css`.
 
-Panel hero dan dashboard operasional berbagi satu polling `/status.json` setiap 60 detik, termasuk status aplikasi, CPU/RAM/disk, kesiapan koneksi PostgreSQL, dan HTTPS publik. Hero menampilkan nilai minimum uptime aplikasi teramati dengan cakupan minimum sampelnya selama 30 hari. Riwayat dan cakupan pemeriksaan ditampilkan; data hilang atau lebih lama dari 3 menit menjadi belum diketahui. Pemeriksaan berasal dari host yang sama, belum ada monitor eksternal atau heartbeat sistem lokal per lokasi. Detail pemasangan tersedia di [deploy/monitoring/README.md](deploy/monitoring/README.md).
+Panel hero, dashboard operasional, dan footer berbagi satu polling `/status.json` setiap 60 detik. Deployment Workers memisahkan probe HTTPS publik dari metrik serta riwayat lokal collector server asal. Hero menampilkan minimum uptime lokal teramati dengan cakupan minimum sampelnya selama 30 hari. Data hilang atau lebih lama dari 3 menit menjadi belum diketahui. Belum ada heartbeat sistem lokal per lokasi. Detail pemasangan collector tersedia di [deploy/monitoring/README.md](deploy/monitoring/README.md).
 
 Section Tentang menghitung jumlah aplikasi Web, Mobile, lokal, dan kapabilitas dari katalog website. Jumlah per platform dapat tumpang tindih; tidak menyatakan jumlah instalasi atau layanan aktif. Footer memakai status monitoring yang sama dengan hero/dashboard. Daftar teknologi, inisiatif, dan panel dukungan masih merupakan ilustrasi. Seluruh CTA dukungan terhubung ke portal resmi di [itportal.kskgroup.web.id](https://itportal.kskgroup.web.id).
 

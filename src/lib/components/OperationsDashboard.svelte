@@ -6,6 +6,19 @@
 	const snapshot = $derived($systemStatus.snapshot);
 	const fresh = $derived($systemStatus.fresh);
 	const data = $derived($systemStatus.data);
+	const external = $derived(snapshot?.externalMonitor ?? true);
+	const probeLabel = $derived(
+		snapshot?.probeLocation === 'development' ? 'host development' : 'Cloudflare'
+	);
+	const originChecked = $derived(
+		data?.originCheckedAt
+			? new Intl.DateTimeFormat('id-ID', {
+					timeZone: 'Asia/Jakarta',
+					dateStyle: 'medium',
+					timeStyle: 'medium'
+				}).format(new Date(data.originCheckedAt)) + ' WIB'
+			: 'belum tersedia atau tidak terbaru'
+	);
 	const healthyApps = $derived(
 		data?.apps.filter((app) => app.status === 'operational').length ?? 0
 	);
@@ -24,31 +37,33 @@
 			name: 'APLIKASI BISNIS',
 			status: appState,
 			value: data ? `${healthyApps}/${data.apps.length}` : '—',
-			label: 'APLIKASI LOKAL OPERASIONAL',
-			detail: 'Service + health check / HTTP'
+			label: external ? 'PROBE PUBLIK OPERASIONAL' : 'APLIKASI LOKAL OPERASIONAL',
+			detail: external
+				? `HTTPS dari ${probeLabel} · halaman / health`
+				: 'Service + health check / HTTP'
 		},
 		{
 			name: 'RESOURCE SERVER',
-			status: data?.host.status ?? 'unknown',
-			value: data ? `${data.host.cpuPercent.toFixed(1)}%` : '—',
+			status: data?.host?.status ?? 'unknown',
+			value: data?.host ? `${data.host.cpuPercent.toFixed(1)}%` : '—',
 			label: 'PENGGUNAAN CPU',
-			detail: data
+			detail: data?.host
 				? `RAM: ${data.host.ramPercent.toFixed(1)}% · DISK: ${data.host.diskPercent.toFixed(1)}%`
-				: 'Menunggu data resource'
+				: 'Data collector server asal belum tersedia'
 		},
 		{
 			name: 'DATABASE',
-			status: data?.database.status ?? 'unknown',
-			value: data ? (data.database.status === 'operational' ? 'SIAP' : 'CEK') : '—',
+			status: data?.database?.status ?? 'unknown',
+			value: data?.database ? (data.database.status === 'operational' ? 'SIAP' : 'CEK') : '—',
 			label: 'POSTGRESQL',
-			detail: 'Pemeriksaan penerimaan koneksi'
+			detail: 'Penerimaan koneksi · collector server asal'
 		},
 		{
 			name: 'AKSES PUBLIK',
 			status: data?.public.status ?? 'unknown',
 			value: data ? `${data.public.available}/${data.public.total}` : '—',
 			label: 'DOMAIN HTTPS TERJANGKAU',
-			detail: 'Pemeriksaan dari host yang sama'
+			detail: external ? `Pemeriksaan HTTPS dari ${probeLabel}` : 'Pemeriksaan dari host aplikasi'
 		}
 	]);
 	function label(status: string) {
@@ -62,7 +77,7 @@
 			number="05"
 			label="OPERASIONAL & MONITORING"
 			title="SELALU DALAM PANTAUAN."
-			text="Pemeriksaan layanan, resource server, database, dan akses aplikasi setiap menit."
+			text="Pengecekan aplikasi melalui HTTPS publik, dilengkapi metrik server dan database dari collector server asal."
 		/>
 		<div class="ops-toolbar mono">
 			<span><Activity size={16} /> STATUS SISTEM</span><span>CHECK: {checked}</span>
@@ -72,8 +87,14 @@
 				? 'Data pemeriksaan terbaru · diperbarui setiap 60 detik.'
 				: snapshot
 					? 'Data status tidak tersedia atau sudah lebih dari 3 menit. Status saat ini belum diketahui.'
-					: 'Status belum tersedia. Menunggu data pemeriksaan server.'}
+					: 'Status belum tersedia. Menunggu hasil pemeriksaan.'}
 		</p>
+		{#if external}
+			<p class="monitor-message">
+				Probe publik: {probeLabel} · diperiksa saat dashboard dimuat dan diperbarui setiap 60 detik. Data
+				server asal: {originChecked}.
+			</p>
+		{/if}
 		<noscript
 			><p class="monitor-message">Aktifkan JavaScript untuk melihat status terbaru.</p></noscript
 		>
@@ -100,26 +121,30 @@
 			>
 				<table class="status-table">
 					<caption
-						>Hasil pemeriksaan lokal dan HTTPS publik; uptime berdasarkan sampel lokal selama 30
-						hari terakhir.</caption
+						>{external
+							? `Hasil probe HTTPS dari ${probeLabel}; uptime dan riwayat berasal dari sampel lokal server asal selama 30 hari.`
+							: 'Hasil pemeriksaan lokal dan HTTPS publik; uptime berdasarkan sampel lokal selama 30 hari terakhir.'}</caption
 					>
 					<thead
 						><tr
-							><th scope="col">Aplikasi</th><th scope="col">Lokal</th><th scope="col"
-								>HTTPS publik</th
-							><th scope="col">Respons lokal</th><th scope="col">Uptime teramati</th><th scope="col"
-								>24 pemeriksaan terakhir</th
+							><th scope="col">Aplikasi</th><th scope="col"
+								>{external ? 'Probe publik' : 'Lokal'}</th
+							><th scope="col">Halaman HTTPS</th><th scope="col"
+								>{external ? 'Respons publik' : 'Respons lokal'}</th
+							><th scope="col">Uptime lokal</th><th scope="col">24 pemeriksaan lokal terakhir</th
 							></tr
 						></thead
 					>
 					<tbody>
-						{#each snapshot?.apps ?? [] as app}
+						{#each data?.apps ?? snapshot?.apps ?? [] as app}
 							<tr>
 								<th scope="row"
 									>{app.name}<small
 										>{app.checkType === 'http'
 											? 'HTTP halaman · fungsi bisnis belum diuji'
-											: 'Service + endpoint health'}</small
+											: external
+												? 'Endpoint health publik'
+												: 'Service + endpoint health'}</small
 									></th
 								>
 								<td
@@ -139,13 +164,14 @@
 									>{fresh && app.uptimePercent !== null
 										? `${app.uptimePercent.toFixed(2)}%`
 										: '—'}<small
-										>{app.sampleCount} sampel · cakupan {app.coveragePercent.toFixed(3)}% / 30 hari</small
+										>{app.sampleCount} sampel lokal · cakupan {app.coveragePercent.toFixed(3)}% / 30
+										hari</small
 									></td
 								>
 								<td
 									><div
 										class="status-history"
-										aria-label={`Riwayat ${app.name}: ${app.history.filter(Boolean).length} dari ${app.history.length} pemeriksaan berhasil`}
+										aria-label={`Riwayat lokal ${app.name}: ${app.history.filter(Boolean).length} dari ${app.history.length} pemeriksaan berhasil`}
 									>
 										{#each app.history as ok}<span class:check-failed={!ok} aria-hidden="true"
 											></span>{/each}
@@ -158,14 +184,18 @@
 			</div>
 		</div>
 		<div class="ops-footer mono">
-			<span>LOKAL + HTTPS DARI HOST YANG SAMA</span><span
-				>PEMERIKSAAN EKSTERNAL BELUM TERHUBUNG</span
+			<span
+				>{external
+					? `PROBE HTTPS DARI ${probeLabel.toUpperCase()}`
+					: 'PROBE DARI HOST APLIKASI'}</span
 			>
+			<span>METRIK & RIWAYAT LOKAL DARI COLLECTOR SERVER ASAL</span>
 		</div>
 		<p class="monitor-message">
-			Gangguan seluruh host memerlukan monitor dari server terpisah. Status sistem lokal di lokasi
-			lain belum dipantau. Uptime teramati hanya mencakup sampel yang terkumpul; jeda pemeriksaan
-			belum dihitung sebagai uptime.
+			Probe publik memeriksa respons HTTPS, bukan seluruh fungsi bisnis. CPU, RAM, disk, database,
+			uptime, dan riwayat lokal berasal dari collector server asal; data yang lebih lama dari 3
+			menit ditandai belum diketahui. Riwayat uptime publik belum disimpan. Status sistem lokal di
+			site lain belum dipantau.
 		</p>
 	</div>
 </section>

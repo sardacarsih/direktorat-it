@@ -1,5 +1,5 @@
 import { derived, readable } from 'svelte/store';
-import { parseStatus, type StatusSnapshot, type SystemStatus } from './status';
+import { freshOriginData, parseStatus, type StatusSnapshot, type SystemStatus } from './status';
 
 type State = { snapshot: StatusSnapshot | null; now: number; failed: boolean };
 const source = readable<State>({ snapshot: null, now: 0, failed: false }, (set) => {
@@ -51,7 +51,11 @@ export const systemStatus = derived(source, (state) => {
 		state.snapshot !== null &&
 		!state.failed &&
 		state.now - Date.parse(state.snapshot.checkedAt) <= 180000;
-	return { ...state, fresh, data: fresh ? state.snapshot : null };
+	return {
+		...state,
+		fresh,
+		data: fresh && state.snapshot ? freshOriginData(state.snapshot, state.now) : null
+	};
 });
 
 export function applicationState(data: StatusSnapshot | null): SystemStatus | 'unknown' {

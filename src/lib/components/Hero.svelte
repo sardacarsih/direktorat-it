@@ -8,9 +8,9 @@
 	const appState = $derived(applicationState(data));
 	const rows: { name: string; status: SystemStatus | 'unknown' }[] = $derived([
 		{ name: 'AKSES PUBLIK', status: data?.public.status ?? 'unknown' },
-		{ name: 'SERVER', status: data?.host.status ?? 'unknown' },
+		{ name: 'SERVER', status: data?.host?.status ?? 'unknown' },
 		{ name: 'APLIKASI', status: appState },
-		{ name: 'DATABASE', status: data?.database.status ?? 'unknown' }
+		{ name: 'DATABASE', status: data?.database?.status ?? 'unknown' }
 	]);
 	const uptime = $derived(
 		data && data.apps.every((app) => app.uptimePercent !== null)
@@ -94,7 +94,7 @@
 						</div>{/each}
 					<div class="terminal-bottom">
 						<div>
-							<span class="mono">UPTIME APLIKASI · MIN</span><strong
+							<span class="mono">UPTIME LOKAL · MIN</span><strong
 								>{uptime === null ? '—' : uptime.toFixed(2)}{#if uptime !== null}<span>%</span
 									>{/if}</strong
 							>
@@ -117,9 +117,11 @@
 				<a class="terminal-foot mono" href="#sistem"
 					>&gt; {!data
 						? 'STATUS BELUM DIKETAHUI'
-						: rows.every((row) => row.status === 'operational')
-							? 'PEMERIKSAAN NORMAL · LIHAT DETAIL'
-							: 'TERDAPAT GANGGUAN · LIHAT DETAIL'}<span class="cursor">_</span></a
+						: rows.some((row) => row.status === 'down' || row.status === 'degraded')
+							? 'TERDAPAT GANGGUAN · LIHAT DETAIL'
+							: rows.some((row) => row.status === 'unknown')
+								? 'DATA SERVER BELUM TERSEDIA · LIHAT DETAIL'
+								: 'PEMERIKSAAN NORMAL · LIHAT DETAIL'}<span class="cursor">_</span></a
 				>
 			</div>
 		</div>

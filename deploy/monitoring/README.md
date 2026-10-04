@@ -2,6 +2,14 @@
 
 Collector Python 3.6+ memeriksa layanan dan endpoint lokal serta HTTPS publik setiap 60 detik. Tidak ada kredensial aplikasi yang digunakan. Status publik berasal dari host yang sama, bukan monitor independen. HRIS/OPAL hanya memeriksa HTTP halaman dan service web; fungsi bisnis/database kedua aplikasi belum diuji.
 
+Deployment Cloudflare Workers memakai endpoint `/status.json` dari
+`worker/index.ts` untuk menjalankan probe HTTPS publik independen. Collector
+Python tetap menjadi sumber metrik host, status PostgreSQL, dan riwayat uptime
+lokal melalui `ORIGIN_STATUS_URL`. Worker tidak mengubah atau menambah sampel
+SQLite. Snapshot Worker versi 2 memisahkan `checkedAt` probe publik dan
+`originCheckedAt` collector; metrik lokal lebih lama dari 3 menit menjadi null.
+Snapshot collector versi 1 tetap didukung untuk deployment Apache.
+
 - Empat aplikasi menggunakan endpoint health; eOfficePro juga memvalidasi respons dependensi, Purchasing dan Inventory menggunakan readiness.
 - PostgreSQL memakai `pg_isready`: menerima koneksi, bukan bukti seluruh query bisnis berhasil.
 - CPU diukur selama 200 ms; RAM menggunakan MemAvailable; disk mengambil persentase tertinggi antara `/` dan `/apps`. Salah satu penggunaan mencapai 90% berarti resource terganggu.
@@ -33,7 +41,7 @@ Frontend juga perlu diuji dengan status terbaru, stale, down, payload invalid, H
 
 ## Monitoring di luar host
 
-Belum ada collector eksternal atau notifikasi yang dikonfigurasi. Untuk deteksi host mati, jalankan pemeriksaan HTTPS dari host independen dan hubungkan notifikasi/status di tahap berikutnya. Sistem lokal Accounting, Finance, Kasir, HRIS Lokal, dan SmartMill Scale membutuhkan heartbeat dari lokasi masing-masing.
+Worker memeriksa domain HTTPS dari jaringan Cloudflare saat dashboard dimuat, dengan cache edge maksimal 30 detik dan polling browser setiap 60 detik. MOPS juga memiliki probe JSON health publik; aplikasi lain hanya diperiksa melalui HTTP halaman. Probe gagal langsung ditandai tidak tersedia untuk pemeriksaan tersebut. Belum ada penjadwalan probe publik tanpa pengunjung, penyimpanan riwayat uptime publik, atau notifikasi. Sistem lokal Accounting, Finance, Kasir, Inventory Lokal, HRIS Lokal, dan SmartMill Scale membutuhkan heartbeat dari lokasi masing-masing.
 
 ## Rollback
 
