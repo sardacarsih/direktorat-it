@@ -2,6 +2,10 @@
 	"name": "direktorat-it",
 	"main": "worker/index.ts",
 	"compatibility_date": "2026-10-04",
+	"workers_dev": true,
+	"routes": [
+		{ "pattern": "it.kskgroup.web.id", "custom_domain": true }
+	],
 	"assets": {
 		"directory": "./build",
 		"binding": "ASSETS",
