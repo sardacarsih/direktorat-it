@@ -41,7 +41,7 @@ function fetcher(source, exceptions = {}) {
 		}
 		if (exceptions[String(url)]) return exceptions[String(url)]();
 		if (String(url).endsWith('/health/live')) {
-			assert.equal(options.redirect, 'error');
+			assert.equal(options.redirect, 'manual');
 			return Response.json({ status: 'ok' });
 		}
 		return new Response('<html>Login</html>', { headers: { 'Content-Type': 'text/html' } });
@@ -97,6 +97,7 @@ test('all four liveness endpoints require JSON status ok independently of page a
 		for (const response of [
 			() => Response.json({ status: 'down' }),
 			() => Response.json({ status: 'ok' }, { status: 503 }),
+			() => Response.json({ status: 'ok' }, { status: 302, headers: { Location: '/login' } }),
 			() => new Response('{"status":"ok"}', { headers: { 'Content-Type': 'text/html' } }),
 			() => new Response('<html>Login</html>', { headers: { 'Content-Type': 'text/html' } })
 		]) {

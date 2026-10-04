@@ -16,7 +16,7 @@ export default {
 		if (request.headers.get('X-DIT-Origin-Probe') === '1')
 			return new Response('Origin collector unavailable', { status: 503 });
 		const cacheKey = new Request(new URL('/status.json', url.origin).href);
-		const cache = await caches.open('dit-public-status-v3');
+		const cache = await caches.open('dit-public-status-v4');
 		let response = await cache.match(cacheKey);
 		if (!response) {
 			response = await statusResponse(env.ORIGIN_STATUS_URL ?? ORIGIN_STATUS_URL);

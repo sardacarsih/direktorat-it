@@ -45,7 +45,8 @@ async function probe(url: string, fetcher: Fetcher, health = false): Promise<Pro
 	try {
 		const response = await fetcher(url, {
 			signal: controller.signal,
-			redirect: health ? 'error' : 'follow',
+			// Workers supports manual/follow; reject health redirects via response.ok below.
+			redirect: health ? 'manual' : 'follow',
 			cache: 'no-store',
 			headers: { 'User-Agent': 'DirektoratIT-PublicMonitor/2.0', 'Cache-Control': 'no-cache' }
 		});
