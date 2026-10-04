@@ -127,6 +127,8 @@ export type BusinessApplication = {
 	url?: string;
 	coverage?: string;
 	description?: string;
+	thumbnail?: string;
+	thumbnails?: string[];
 };
 
 export const businessApplications: BusinessApplication[] = [
@@ -168,14 +170,22 @@ export const localApplications: BusinessApplication[] = [
 		platforms: ['Lokal'],
 		coverage: 'Setiap lokasi',
 		description:
-			'Aplikasi desktop akuntansi untuk pencatatan jurnal, General Ledger, pengelolaan akun, aset tetap dan penyusutan, serta laporan dan ekspor data.'
+			'Aplikasi desktop akuntansi untuk pencatatan jurnal, General Ledger, pengelolaan akun, aset tetap dan penyusutan, serta laporan dan ekspor data.',
+		thumbnail: '/images/accounting.webp'
 	},
 	{
 		name: 'Finance',
 		platforms: ['Lokal'],
 		coverage: 'Setiap lokasi',
 		description:
-			'Aplikasi desktop payroll agronomi untuk pengelolaan BKM, penggajian harian dan bulanan, premi, tunjangan, potongan termasuk BPJS, serta laporan penggajian.'
+			'Aplikasi desktop payroll agronomi untuk pengelolaan BKM, penggajian harian dan bulanan, premi, tunjangan, potongan termasuk BPJS, serta laporan penggajian.',
+		thumbnails: [
+			'/images/finance-1.webp',
+			'/images/finance-2.webp',
+			'/images/finance-3.webp',
+			'/images/finance-4.webp',
+			'/images/finance-5.webp'
+		]
 	},
 	{
 		name: 'Kasir',
@@ -190,13 +200,24 @@ export const localApplications: BusinessApplication[] = [
 		description:
 			'Sistem inventori lokal untuk operasional gudang yang terintegrasi dengan Global Items melalui agent di setiap site. Agent menyinkronkan perubahan master barang dari pusat ke database lokal. Operasional tetap berjalan saat koneksi terputus dan sinkronisasi dilanjutkan saat koneksi pulih.'
 	},
-	{ name: 'HRIS Lokal', platforms: ['Lokal'], coverage: 'Setiap lokasi' },
+	{
+		name: 'HRIS Lokal',
+		platforms: ['Lokal'],
+		coverage: 'Setiap lokasi',
+		description:
+			'Aplikasi lokal sistem informasi kepegawaian untuk pengelolaan data karyawan di setiap lokasi.'
+	},
 	{
 		name: 'SmartMill Scale',
 		platforms: ['Lokal'],
 		coverage: 'Setiap PKS',
 		description:
-			'Aplikasi desktop untuk timbang masuk dan keluar, pembacaan perangkat timbangan, grading, cetak tiket, serta laporan dan ekspor PDF/Excel.'
+			'Aplikasi desktop untuk timbang masuk dan keluar, pembacaan perangkat timbangan, grading, cetak tiket, serta laporan dan ekspor PDF/Excel.',
+		thumbnails: [
+			'/images/smartmill-scale-login.webp',
+			'/images/smartmill-scale-1.webp',
+			'/images/smartmill-scale-2.webp'
+		]
 	}
 ];
 

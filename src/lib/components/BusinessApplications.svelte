@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { ArrowUpRight, Monitor, Smartphone, MapPin } from '@lucide/svelte';
 	import { businessApplications, localApplications } from '$lib/content';
+	import ApplicationGallery from './ApplicationGallery.svelte';
 	import SectionHeading from './SectionHeading.svelte';
 </script>
 
@@ -20,6 +21,7 @@
 			<div class="applications-grid">
 				{#each businessApplications as app, index}
 					<article class="application-card">
+						<ApplicationGallery {app} />
 						<div class="application-card-top">
 							<span class="application-index mono">{String(index + 1).padStart(2, '0')}</span>
 							<div class="application-platforms">
@@ -63,6 +65,7 @@
 			<div class="applications-grid local-applications-grid">
 				{#each localApplications as app}
 					<article class="application-card local-application-card">
+						<ApplicationGallery {app} />
 						<span class="application-badge local mono"
 							><Monitor size={13} aria-hidden="true" />Lokal</span
 						>
