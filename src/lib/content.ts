@@ -125,6 +125,7 @@ export type BusinessApplication = {
 	name: string;
 	platforms: ('Web' | 'Mobile' | 'Lokal')[];
 	url?: string;
+	links?: { label: string; url: string }[];
 	coverage?: string;
 	description?: string;
 	thumbnail?: string;
@@ -156,7 +157,10 @@ export const businessApplications: BusinessApplication[] = [
 	{
 		name: 'Purchasing dan Inventory',
 		platforms: ['Web', 'Mobile'],
-		url: 'https://inventori.kskgroup.web.id',
+		links: [
+			{ label: 'Purchasing', url: 'https://purchasing.kskgroup.web.id' },
+			{ label: 'Inventory', url: 'https://inventori.kskgroup.web.id' }
+		],
 		description:
 			'Sistem purchasing dan inventory terpusat untuk pengelolaan pengadaan dan master barang, pemantauan saldo stok antar lokasi, permintaan dan penerimaan barang divisi, serta sinkronisasi data dengan sistem lokal.'
 	},

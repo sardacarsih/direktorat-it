@@ -40,7 +40,20 @@
 						{#if app.description}
 							<p class="application-description">{app.description}</p>
 						{/if}
-						{#if app.url}
+						{#if app.links}
+							{#each app.links as link}
+								<a
+									class="application-link mono"
+									href={link.url}
+									target="_blank"
+									rel="noopener noreferrer"
+									aria-label={`Buka ${link.label} ${app.name} (tab baru)`}
+								>
+									BUKA {link.label.toUpperCase()}
+									<ArrowUpRight size={18} aria-hidden="true" />
+								</a>
+							{/each}
+						{:else if app.url}
 							<a
 								class="application-link mono"
 								href={app.url}

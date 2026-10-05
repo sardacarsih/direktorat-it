@@ -1013,7 +1013,7 @@ h2 {
 }
 .status-table {
 	width: 100%;
-	min-width: 850px;
+	min-width: 960px;
 	border-collapse: collapse;
 	font-size: 13px;
 }
@@ -1047,12 +1047,13 @@ h2 {
 }
 .status-history {
 	display: flex;
-	gap: 3px;
+	gap: 2px;
 	min-height: 24px;
 	align-items: center;
 }
 .status-history span {
-	width: 4px;
+	flex: none;
+	width: 3px;
 	height: 24px;
 	background: var(--lime);
 }

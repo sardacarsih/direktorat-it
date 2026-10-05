@@ -148,7 +148,7 @@
 							><th scope="col">Halaman HTTPS</th><th scope="col"
 								>{external ? 'Respons publik' : 'Respons lokal'}</th
 							><th scope="col">Uptime {scheduled ? 'publik' : 'lokal'}</th><th scope="col"
-								>24 pemeriksaan {scheduled ? 'publik' : 'lokal'} terakhir</th
+								>30 pemeriksaan {scheduled ? 'publik' : 'lokal'} terakhir</th
 							></tr
 						></thead
 					>
@@ -212,8 +212,8 @@
 				<h3>Perubahan status terkonfirmasi</h3>
 				<p class="monitor-message">
 					{snapshot?.monitoring?.notificationConfigured
-						? 'Notifikasi email perubahan status aktif.'
-						: 'Notifikasi email belum aktif; layanan pengiriman dan domain pengirim Cloudflare perlu disiapkan.'}
+						? 'Notifikasi email via Resend aktif: satu email saat tidak tersedia dan satu email saat pulih.'
+						: 'Notifikasi email belum aktif; API key Resend, alamat pengirim, dan alamat penerima perlu disiapkan.'}
 				</p>
 				{#if snapshot?.monitoring?.events.length}
 					<ul>

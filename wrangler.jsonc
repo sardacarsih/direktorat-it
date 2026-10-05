@@ -13,6 +13,8 @@
 		"run_worker_first": ["/status.json"]
 	},
 	"vars": {
-		"ORIGIN_STATUS_URL": "https://it-origin.kskgroup.web.id/status.json"
+		"ORIGIN_STATUS_URL": "https://it-origin.kskgroup.web.id/status.json",
+		"ALERT_EMAIL_FROM": "Direktorat IT <onboarding@resend.dev>",
+		"ALERT_EMAIL_TO": "kskitdeveloper@gmail.com"
 	}
 }

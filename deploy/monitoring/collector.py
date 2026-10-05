@@ -86,7 +86,7 @@ def summary(db, key, now):
     count, success, first = db.execute(
         'SELECT COUNT(*), SUM(ok), MIN(ts) FROM samples WHERE target=? AND ts>=?',
         (key, now - WINDOW)).fetchone()
-    recent = db.execute('SELECT ok FROM samples WHERE target=? ORDER BY ts DESC LIMIT 24',
+    recent = db.execute('SELECT ok FROM samples WHERE target=? ORDER BY ts DESC LIMIT 30',
                         (key,)).fetchall()
     return {'uptimePercent': round(100 * success / count, 2) if count else None,
             'sampleCount': count, 'coveragePercent': round(min(100, count / (WINDOW / 60) * 100), 3),

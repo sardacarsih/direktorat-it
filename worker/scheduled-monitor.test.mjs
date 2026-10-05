@@ -57,7 +57,7 @@ function harness(env = {}, db = new Database(':memory:')) {
 					since: null,
 					history: []
 				})),
-				public: { status: 'operational', available: 6, total: 6 }
+				public: { status: 'operational', available: 7, total: 7 }
 			};
 		}
 	};
@@ -186,16 +186,18 @@ test('email failure retries from durable outbox and delivered events are not sen
 	let attempts = 0;
 	let failing = true;
 	const messages = [];
+	const realFetch = globalThis.fetch;
+	globalThis.fetch = async (url, init) => {
+		assert.equal(url, 'https://api.resend.com/emails');
+		attempts++;
+		if (failing) return new Response('{}', { status: 500 });
+		messages.push({ ...JSON.parse(init.body), headers: init.headers });
+		return Response.json({ id: 'email' });
+	};
 	const h = harness({
 		ALERT_EMAIL_FROM: 'alerts@example.com',
 		ALERT_EMAIL_TO: 'owner@example.com',
-		EMAIL: {
-			async send(message) {
-				attempts++;
-				if (failing) throw new Error('temporary email failure');
-				messages.push(message);
-			}
-		}
+		RESEND_API_KEY: 're_test'
 	});
 	await h.tick();
 	await h.tick();
@@ -203,20 +205,48 @@ test('email failure retries from durable outbox and delivered events are not sen
 	await h.tick();
 	await h.tick();
 	await h.tick();
-	assert.equal(attempts, 6);
+	assert.equal(attempts, 7);
 	h.restart();
 	failing = false;
 	await h.tick();
-	assert.equal(messages.length, 6);
+	assert.equal(messages.length, 7);
 	assert.ok((await h.snapshot()).monitoring.events.every((e) => e.delivered));
 	await h.tick();
-	assert.equal(messages.length, 6);
+	assert.equal(messages.length, 7);
 	assert.ok(
 		messages.every(
-			(message) => message.to === 'owner@example.com' && message.headers['X-Monitor-Event-ID']
+			(message) => message.to[0] === 'owner@example.com' && message.headers['Idempotency-Key']
 		)
 	);
 	h.db.close();
+	globalThis.fetch = realFetch;
+});
+
+test('sends one down email per outage and one recovery email, even when both checks fail', async () => {
+	const subjects = [];
+	const realFetch = globalThis.fetch;
+	globalThis.fetch = async (_url, init) => {
+		subjects.push(JSON.parse(init.body).subject);
+		return Response.json({ id: 'email' });
+	};
+	const h = harness({
+		ALERT_EMAIL_FROM: 'alerts@example.com',
+		ALERT_EMAIL_TO: 'owner@example.com',
+		RESEND_API_KEY: 're_test'
+	});
+	await h.tick();
+	await h.tick();
+	h.set(false, false);
+	for (let i = 0; i < 8; i++) await h.tick();
+	const down = subjects.length;
+	assert.equal(down, config.apps.length);
+	assert.ok(subjects.every((subject) => subject.endsWith('TIDAK TERSEDIA')));
+	h.set(true, true);
+	for (let i = 0; i < 4; i++) await h.tick();
+	assert.equal(subjects.length, down * 2);
+	assert.ok(subjects.slice(down).every((subject) => subject.endsWith('PULIH')));
+	h.db.close();
+	globalThis.fetch = realFetch;
 });
 
 test('scheduled handler uses singleton binding while public status only reads; no tick route exposed', async () => {

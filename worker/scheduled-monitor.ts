@@ -19,15 +19,7 @@ type MonitorEnvironment = {
 	ORIGIN_STATUS_URL?: string;
 	ALERT_EMAIL_FROM?: string;
 	ALERT_EMAIL_TO?: string;
-	EMAIL?: {
-		send(message: {
-			from: string;
-			to: string;
-			subject: string;
-			text: string;
-			headers: Record<string, string>;
-		}): Promise<unknown>;
-	};
+	RESEND_API_KEY?: string;
 };
 type Channel = {
 	stable: 'operational' | 'down' | null;
@@ -121,7 +113,7 @@ export class PublicMonitor {
 			const cutoff = slot - WINDOW;
 			const expired = this.sql
 				.exec<{ app: string; count: number; successes: number }>(
-					'SELECT app, COUNT(*) AS count, SUM(ok) AS successes FROM samples WHERE slot <= ? GROUP BY app',
+					'SELECT app, COUNT(*) AS count, SUM(ok) AS successes FROM samples INDEXED BY sqlite_autoindex_samples_1 WHERE slot <= ? GROUP BY app',
 					cutoff
 				)
 				.toArray();
@@ -149,11 +141,10 @@ export class PublicMonitor {
 					app.id,
 					+ok
 				);
-				app.status = this.channel(`app:${app.id}`, app.id, app.name, 'application', ok, slot);
+				app.status = this.channel(`app:${app.id}`, ok, slot);
 				app.publicStatus =
-					app.checkType === 'http'
-						? app.status
-						: this.channel(`page:${app.id}`, app.id, app.name, 'page', pageOk, slot);
+					app.checkType === 'http' ? app.status : this.channel(`page:${app.id}`, pageOk, slot);
+				this.alert(app, slot);
 				const total = this.sql
 					.exec<{ count: number; successes: number }>(
 						'SELECT count,successes FROM totals WHERE app=?',
@@ -162,7 +153,7 @@ export class PublicMonitor {
 					.toArray()[0];
 				const recent = this.sql
 					.exec<{ slot: number; ok: number }>(
-						'SELECT slot,ok FROM samples WHERE app=? ORDER BY slot DESC LIMIT 24',
+						'SELECT slot,ok FROM samples WHERE app=? ORDER BY slot DESC LIMIT 30',
 						app.id
 					)
 					.toArray()
@@ -197,7 +188,7 @@ export class PublicMonitor {
 				failureThreshold: 3,
 				recoveryThreshold: 2,
 				notificationConfigured: Boolean(
-					this.env.EMAIL && this.env.ALERT_EMAIL_FROM && this.env.ALERT_EMAIL_TO
+					this.env.RESEND_API_KEY && this.env.ALERT_EMAIL_FROM && this.env.ALERT_EMAIL_TO
 				),
 				events: []
 			};
@@ -214,38 +205,44 @@ export class PublicMonitor {
 			.map((row) => ({ ...JSON.parse(row.payload), delivered: row.delivered === 1 }));
 		this.put('snapshot', stored);
 	}
-	private channel(
-		key: string,
-		appId: string,
-		name: string,
-		check: 'application' | 'page',
-		ok: boolean,
-		slot: number
-	): SystemStatus {
-		const { state, status, changed } = advance(this.get<Channel>(key), ok, slot);
+	private channel(key: string, ok: boolean, slot: number): SystemStatus {
+		const { state, status } = advance(this.get<Channel>(key), ok, slot);
 		this.put(key, state);
-		if (changed) {
-			const event: MonitorEvent = {
-				id: `${key}:${slot}`,
-				at: new Date(slot).toISOString(),
-				appId,
-				name,
-				check,
-				status: state.stable!,
-				delivered: false
-			};
-			this.sql.exec(
-				'INSERT INTO events(id,at,payload,next_attempt) VALUES(?,?,?,?)',
-				event.id,
-				slot,
-				JSON.stringify(event),
-				slot
-			);
-		}
 		return status;
 	}
+	// One alert per outage per application: "down" once when either check fails for good,
+	// "operational" once when both have recovered. Repeated failures stay silent.
+	private alert(
+		app: { id: string; name: string; status: SystemStatus; publicStatus: SystemStatus },
+		slot: number
+	) {
+		const key = `alert:${app.id}`;
+		const previous = this.get<'operational' | 'down'>(key);
+		const current = app.status === 'down' || app.publicStatus === 'down' ? 'down' : 'operational';
+		if (current === previous || (previous === null && current === 'operational')) {
+			if (previous === null) this.put(key, current);
+			return;
+		}
+		this.put(key, current);
+		const event: MonitorEvent = {
+			id: `${key}:${slot}`,
+			at: new Date(slot).toISOString(),
+			appId: app.id,
+			name: app.name,
+			check: app.status === 'down' || current === 'operational' ? 'application' : 'page',
+			status: current,
+			delivered: false
+		};
+		this.sql.exec(
+			'INSERT INTO events(id,at,payload,next_attempt) VALUES(?,?,?,?)',
+			event.id,
+			slot,
+			JSON.stringify(event),
+			slot
+		);
+	}
 	private async deliver(): Promise<void> {
-		if (!this.env.EMAIL || !this.env.ALERT_EMAIL_FROM || !this.env.ALERT_EMAIL_TO) return;
+		if (!this.env.RESEND_API_KEY || !this.env.ALERT_EMAIL_FROM || !this.env.ALERT_EMAIL_TO) return;
 		const now = this.dependencies.now();
 		const pending = this.sql
 			.exec<{ id: string; payload: string; attempts: number }>(
@@ -257,13 +254,21 @@ export class PublicMonitor {
 			let delivered = false;
 			try {
 				const change = JSON.parse(event.payload) as MonitorEvent;
-				await this.env.EMAIL.send({
-					from: this.env.ALERT_EMAIL_FROM,
-					to: this.env.ALERT_EMAIL_TO,
-					subject: `[Direktorat IT] ${change.name}: ${change.status === 'down' ? 'TIDAK TERSEDIA' : 'PULIH'}`,
-					text: `${change.name} (${change.check === 'page' ? 'halaman HTTPS' : 'aplikasi'}) ${change.status === 'down' ? 'mengalami gangguan setelah 3 kegagalan berturut-turut' : 'pulih setelah 2 keberhasilan berturut-turut'}.\nWaktu: ${change.at}\nEvent: ${change.id}\nDashboard: https://it.kskgroup.web.id/#sistem`,
-					headers: { 'X-Monitor-Event-ID': event.id }
+				const response = await this.dependencies.fetcher('https://api.resend.com/emails', {
+					method: 'POST',
+					headers: {
+						Authorization: `Bearer ${this.env.RESEND_API_KEY}`,
+						'Content-Type': 'application/json',
+						'Idempotency-Key': event.id
+					},
+					body: JSON.stringify({
+						from: this.env.ALERT_EMAIL_FROM,
+						to: this.env.ALERT_EMAIL_TO.split(',').map((address) => address.trim()),
+						subject: `[Direktorat IT] ${change.name}: ${change.status === 'down' ? 'TIDAK TERSEDIA' : 'PULIH'}`,
+						text: `${change.name} (${change.check === 'page' ? 'halaman HTTPS' : 'aplikasi'}) ${change.status === 'down' ? 'mengalami gangguan setelah 3 kegagalan berturut-turut' : 'pulih setelah 2 keberhasilan berturut-turut'}.\nWaktu: ${change.at}\nEvent: ${change.id}\nDashboard: https://it.kskgroup.web.id/#sistem`
+					})
 				});
+				if (!response.ok) throw new Error('Resend rejected the message');
 				delivered = true;
 			} catch {
 				/* Retry pending notifications without exposing addresses or provider errors. */

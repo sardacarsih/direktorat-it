@@ -76,7 +76,7 @@ export function parseStatus(value: unknown): StatusSnapshot {
 		percentage(v.coveragePercent) &&
 		(v.since === null || timestamp(v.since)) &&
 		Array.isArray(v.history) &&
-		v.history.length <= 24 &&
+		v.history.length <= 30 &&
 		v.history.every((ok) => typeof ok === 'boolean');
 	const data = value as StatusSnapshot;
 	const legacy = data?.version === 1;
@@ -116,8 +116,8 @@ export function parseStatus(value: unknown): StatusSnapshot {
 				(typeof data.originCheckedAt === 'string' &&
 					Date.parse(data.originCheckedAt) > Date.now() + 60000)) ||
 		!Array.isArray(data.apps) ||
-		data.apps.length !== 6 ||
-		new Set(data.apps.map((app) => app?.id)).size !== 6 ||
+		data.apps.length !== 7 ||
+		new Set(data.apps.map((app) => app?.id)).size !== 7 ||
 		!data.apps.every(
 			(app) =>
 				app &&
@@ -136,7 +136,7 @@ export function parseStatus(value: unknown): StatusSnapshot {
 				percentage(app.coveragePercent) &&
 				(app.since === null || timestamp(app.since)) &&
 				Array.isArray(app.history) &&
-				app.history.length <= 24 &&
+				app.history.length <= 30 &&
 				app.history.every((ok) => typeof ok === 'boolean')
 		) ||
 		(data.host === null

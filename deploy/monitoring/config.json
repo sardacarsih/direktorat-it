@@ -35,13 +35,21 @@
 		},
 		{
 			"id": "inventory",
-			"name": "Purchasing dan Inventory",
+			"name": "Inventory",
 			"services": ["inventory-central-api", "inventory-web-admin"],
 			"checks": [
 				{ "url": "http://127.0.0.1:8442/ready", "json": { "status": "READY" } },
 				{ "url": "http://127.0.0.1:8441/login" }
 			],
 			"publicUrl": "https://inventori.kskgroup.web.id",
+			"publicHealthPath": "/health/live"
+		},
+		{
+			"id": "purchasing",
+			"name": "Purchasing",
+			"services": [],
+			"checks": [],
+			"publicUrl": "https://purchasing.kskgroup.web.id",
 			"publicHealthPath": "/health/live"
 		},
 		{

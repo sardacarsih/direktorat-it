@@ -46,11 +46,11 @@ Cron Trigger `* * * * *` memeriksa domain HTTPS dari jaringan Cloudflare setiap
 menit tanpa pengunjung. Satu Durable Object SQLite `PublicMonitor` menyimpan
 snapshot, counter dan sampel; browser membaca snapshot setiap 60 detik tanpa
 cache. Field
-`publicHealthPath` pada config mengarahkan Agrinova, MOPS, eOfficePro, dan
-Purchasing dan Inventory ke `/health/live`. Respons harus HTTP sukses dengan
+`publicHealthPath` pada config mengarahkan Agrinova, MOPS, eOfficePro, Inventory,
+dan Purchasing ke `/health/live`. Respons harus HTTP sukses dengan
 Content-Type JSON dan `status: ok`; redirect dan HTML login ditolak. Liveness
 tidak membuktikan kesiapan dependensi atau fungsi bisnis. HRIS/OPAL memakai HTTP
-halaman. Halaman publik keenam aplikasi diperiksa secara terpisah dari liveness;
+halaman. Halaman publik ketujuh aplikasi diperiksa secara terpisah dari liveness;
 kegagalan salah satunya tidak menimpa hasil yang lain. Status DOWN dikonfirmasi
 setelah 3 kegagalan pada slot menit berurutan; pemulihan memerlukan 2 keberhasilan.
 Kegagalan awal ditandai terganggu. Saat baru dipasang, 2 keberhasilan diperlukan
@@ -70,7 +70,7 @@ dan SmartMill Scale membutuhkan heartbeat dari lokasi masing-masing.
 
 Sampel mentah liveness dan halaman disimpan 30 hari. Persentase uptime publik
 adalah jumlah sampel liveness berhasil / sampel yang ada; cakupan adalah jumlah
-sampel / 43.200. Jeda tidak diisi dengan sampel buatan. Dashboard menampilkan 24
+sampel / 43.200. Jeda tidak diisi dengan sampel buatan. Dashboard menampilkan 30
 sampel terakhir dan 12 perubahan status terkonfirmasi terakhir. Metrik dan
 riwayat lokal tetap tersimpan terpisah dan kedaluwarsa secara independen.
 

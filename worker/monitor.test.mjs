@@ -28,7 +28,7 @@ function origin(age = 0) {
 		})),
 		host: { status: 'operational', cpuPercent: 12, ramPercent: 20, diskPercent: 30 },
 		database: { status: 'operational', checkType: 'accepting-connections' },
-		public: { status: 'down', available: 0, total: 6 }
+		public: { status: 'down', available: 0, total: 7 }
 	};
 }
 
@@ -54,7 +54,7 @@ test('public probes override same-host results while retaining independently dat
 	assert.equal(snapshot.probeLocation, 'cloudflare');
 	assert.equal(snapshot.externalMonitor, true);
 	assert.equal(snapshot.originCheckedAt, source.checkedAt);
-	assert.equal(snapshot.public.available, 6);
+	assert.equal(snapshot.public.available, 7);
 	assert.equal(snapshot.host.cpuPercent, 12);
 	assert.ok(snapshot.apps.every((app) => app.status === 'operational'));
 	assert.ok(snapshot.apps.every((app) => app.uptimePercent === 40));
@@ -69,7 +69,7 @@ test('public probes override same-host results while retaining independently dat
 test('stale or malformed origin data does not prevent independent public checks', async () => {
 	for (const source of [origin(181000), { version: 1 }, null]) {
 		const snapshot = parseStatus(await collectPublicStatus(fetcher(source)));
-		assert.equal(snapshot.public.available, 6);
+		assert.equal(snapshot.public.available, 7);
 		assert.equal(snapshot.originCheckedAt, null);
 		assert.equal(snapshot.host, null);
 		assert.equal(snapshot.database, null);
@@ -87,7 +87,7 @@ test('HTML with HTTP 200 cannot pass JSON health checks; backend and page availa
 	assert.equal(app.status, 'down');
 	assert.equal(app.publicStatus, 'operational');
 	assert.equal(app.latencyMs, null);
-	assert.equal(snapshot.public.available, 6);
+	assert.equal(snapshot.public.available, 7);
 });
 
 test('all four liveness endpoints require JSON status ok independently of page availability', async () => {
@@ -107,7 +107,7 @@ test('all four liveness endpoints require JSON status ok independently of page a
 			assert.equal(result.checkType, 'health');
 			assert.equal(result.publicStatus, 'operational');
 			assert.equal(result.latencyMs, null);
-			assert.equal(snapshot.public.available, 6);
+			assert.equal(snapshot.public.available, 7);
 			assert.ok(
 				snapshot.apps
 					.filter((candidate) => candidate.id !== id)
@@ -125,7 +125,7 @@ test('origin network failure and an unavailable public app do not discard other 
 		})(url, options);
 	});
 	assert.equal(snapshot.public.status, 'degraded');
-	assert.equal(snapshot.public.available, 5);
+	assert.equal(snapshot.public.available, 6);
 	assert.equal(snapshot.apps.find((app) => app.id === 'agrinova').status, 'operational');
 	assert.equal(snapshot.apps.find((app) => app.id === 'agrinova').publicStatus, 'down');
 	assert.equal(snapshot.host, null);
@@ -139,7 +139,7 @@ test('origin metrics expire even while the external snapshot remains fresh', asy
 	assert.equal(current.database, null);
 	assert.equal(current.originCheckedAt, null);
 	assert.ok(current.apps.every((app) => app.uptimePercent === null && app.history.length === 0));
-	assert.equal(current.public.available, 6);
+	assert.equal(current.public.available, 7);
 });
 
 test('legacy snapshots remain supported, and mismatched external provenance is rejected', async () => {
