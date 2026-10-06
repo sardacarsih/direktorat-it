@@ -53,7 +53,12 @@ export class PublicMonitor {
 	constructor(
 		private ctx: { storage: Storage },
 		private env: MonitorEnvironment,
-		private dependencies = { collect: collectPublicStatus, fetcher: fetch, now: Date.now }
+		// fetch must stay bound to globalThis: workerd rejects fetch called on another receiver.
+		private dependencies = {
+			collect: collectPublicStatus,
+			fetcher: fetch.bind(globalThis),
+			now: Date.now
+		}
 	) {
 		this.sql = ctx.storage.sql;
 		this.sql.exec(`CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
