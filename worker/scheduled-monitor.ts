@@ -1,4 +1,5 @@
 import { collectPublicStatus, ORIGIN_STATUS_URL } from './monitor.ts';
+import { createFcmClient, parseServiceAccount } from './fcm.ts';
 import type {
 	StatusSnapshot,
 	SystemStatus,
@@ -21,7 +22,11 @@ type MonitorEnvironment = {
 	ALERT_EMAIL_TO?: string;
 	RESEND_API_KEY?: string;
 	ALERT_DAILY_LIMIT?: string;
+	FCM_TOPIC?: string;
+	// One Firebase service account JSON per application: FCM_SERVICE_ACCOUNT_<APP ID>.
+	[serviceAccount: `FCM_SERVICE_ACCOUNT_${string}`]: string | undefined;
 };
+const PUSH_MAX_AGE = 60 * MINUTE;
 type Channel = {
 	stable: 'operational' | 'down' | null;
 	successes: number;
@@ -67,7 +72,13 @@ export class PublicMonitor {
       CREATE INDEX IF NOT EXISTS samples_app_slot ON samples(app, slot);
       CREATE TABLE IF NOT EXISTS totals (app TEXT PRIMARY KEY, count INTEGER NOT NULL, successes INTEGER NOT NULL);
       CREATE TABLE IF NOT EXISTS events (id TEXT PRIMARY KEY, at INTEGER NOT NULL, payload TEXT NOT NULL, delivered INTEGER NOT NULL DEFAULT 0, attempts INTEGER NOT NULL DEFAULT 0, next_attempt INTEGER NOT NULL DEFAULT 0);
-      CREATE INDEX IF NOT EXISTS events_delivery ON events(delivered, next_attempt);`);
+      CREATE INDEX IF NOT EXISTS events_delivery ON events(delivered, next_attempt);
+      CREATE TABLE IF NOT EXISTS pushes (event_id TEXT PRIMARY KEY, app TEXT NOT NULL, at INTEGER NOT NULL, delivered INTEGER NOT NULL DEFAULT 0, attempts INTEGER NOT NULL DEFAULT 0, next_attempt INTEGER NOT NULL DEFAULT 0);`);
+		this.fcm = createFcmClient(this.dependencies.fetcher, this.dependencies.now);
+	}
+	private fcm: ReturnType<typeof createFcmClient>;
+	private serviceAccount(appId: string) {
+		return parseServiceAccount(this.env[`FCM_SERVICE_ACCOUNT_${appId.toUpperCase()}`]);
 	}
 	private get<T>(key: string): T | null {
 		const row = this.sql
@@ -132,6 +143,7 @@ export class PublicMonitor {
 				);
 			this.sql.exec('DELETE FROM samples WHERE slot <= ?', cutoff);
 			this.sql.exec('DELETE FROM events WHERE at < ?', cutoff);
+			this.sql.exec('DELETE FROM pushes WHERE at < ?', cutoff);
 			for (const app of snapshot.apps) {
 				const ok = app.status === 'operational';
 				const pageOk = app.publicStatus === 'operational';
@@ -202,6 +214,7 @@ export class PublicMonitor {
 			this.put('lastSlot', slot);
 		});
 		await this.deliver();
+		await this.push();
 		const stored = this.get<StatusSnapshot>('snapshot')!;
 		stored.monitoring!.events = this.sql
 			.exec<{ payload: string; delivered: number }>(
@@ -247,6 +260,14 @@ export class PublicMonitor {
 			JSON.stringify(event),
 			slot
 		);
+		if (this.serviceAccount(app.id))
+			this.sql.exec(
+				'INSERT INTO pushes(event_id,app,at,next_attempt) VALUES(?,?,?,?)',
+				event.id,
+				app.id,
+				slot,
+				slot
+			);
 	}
 	// All pending changes go out as one digest email so a shared outage costs one email,
 	// not one per application. A daily cap (UTC, like Resend's quota) suppresses the rest.
@@ -334,6 +355,66 @@ export class PublicMonitor {
 			);
 			const attempts = Math.max(...pending.map((event) => event.attempts));
 			mark(0, now + Math.min(3600000, MINUTE * 2 ** Math.min(attempts, 6)));
+		}
+	}
+	// Push notifications go to every user of the affected app through that app's own Firebase
+	// project. Only the latest change per app is sent, and stale changes are dropped.
+	private async push(): Promise<void> {
+		const now = this.dependencies.now();
+		// Older changes of an app with a newer one are superseded, never sent afterwards.
+		this.sql.exec(
+			'UPDATE pushes SET delivered=2 WHERE delivered=0 AND at < (SELECT MAX(at) FROM pushes AS newer WHERE newer.app=pushes.app)'
+		);
+		const pending = this.sql
+			.exec<{ event_id: string; app: string; at: number; attempts: number; payload: string }>(
+				'SELECT p.event_id,p.app,p.at,p.attempts,e.payload FROM pushes p JOIN events e ON e.id=p.event_id WHERE p.delivered=0 AND p.next_attempt<=? ORDER BY p.at DESC LIMIT 20',
+				now
+			)
+			.toArray();
+		for (const item of pending) {
+			const account = this.serviceAccount(item.app);
+			if (now - item.at > PUSH_MAX_AGE || !account) {
+				this.sql.exec('UPDATE pushes SET delivered=2 WHERE event_id=?', item.event_id);
+				continue;
+			}
+			const change = JSON.parse(item.payload) as MonitorEvent;
+			const down = change.status === 'down';
+			const collapse = `status-${change.appId}`;
+			try {
+				await this.fcm.sendTopic(account, {
+					topic: this.env.FCM_TOPIC || 'service-status',
+					notification: {
+						title: down
+							? `${change.name} sedang mengalami gangguan`
+							: `${change.name} sudah normal kembali`,
+						body: down
+							? 'Layanan sementara tidak dapat diakses. Tim IT sedang menangani.'
+							: 'Layanan sudah dapat digunakan kembali.'
+					},
+					data: { appId: change.appId, status: change.status, eventId: change.id, at: change.at },
+					android: { priority: 'HIGH', collapse_key: collapse, ttl: '3600s' },
+					apns: {
+						headers: {
+							'apns-collapse-id': collapse,
+							'apns-expiration': String(Math.floor(now / 1000) + 3600)
+						}
+					}
+				});
+				this.sql.exec(
+					'UPDATE pushes SET delivered=1, attempts=attempts+1 WHERE event_id=?',
+					item.event_id
+				);
+				console.log(`[push-delivery] ${item.event_id} delivered`);
+			} catch (error) {
+				console.error(
+					`[push-delivery] ${item.event_id} failed: ${error instanceof Error ? error.message : String(error)}`
+				);
+				this.sql.exec(
+					'UPDATE pushes SET attempts=attempts+1, next_attempt=? WHERE event_id=?',
+					now + Math.min(3600000, MINUTE * 2 ** Math.min(item.attempts, 6)),
+					item.event_id
+				);
+			}
 		}
 	}
 }

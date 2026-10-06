@@ -5,6 +5,7 @@ import config from '../deploy/monitoring/config.json' with { type: 'json' };
 import { PublicMonitor, advance } from './scheduled-monitor.ts';
 import { parseStatus, freshOriginData } from '../src/lib/status.ts';
 import worker from './index.ts';
+import { testServiceAccount } from './fcm.test.mjs';
 
 const MINUTE = 60000;
 function harness(env = {}, db = new Database(':memory:')) {
@@ -275,6 +276,103 @@ test('daily limit suppresses further emails and marks events undelivered', async
 	assert.ok(events.filter((e) => e.status === 'down').every((e) => e.delivered));
 	h.db.close();
 	globalThis.fetch = realFetch;
+});
+
+function pushMock({ failing = () => false } = {}) {
+	const pushes = [];
+	const emails = [];
+	let tokens = 0;
+	const realFetch = globalThis.fetch;
+	globalThis.fetch = async (url, init) => {
+		if (url.startsWith('https://oauth2')) {
+			tokens++;
+			return Response.json({ access_token: 'tok', expires_in: 3600 });
+		}
+		if (url.startsWith('https://fcm')) {
+			if (failing()) return new Response('{}', { status: 500 });
+			pushes.push({ url, ...JSON.parse(init.body).message });
+			return Response.json({ name: 'msg' });
+		}
+		emails.push(JSON.parse(init.body));
+		return Response.json({ id: 'email' });
+	};
+	return {
+		pushes,
+		emails,
+		get tokens() {
+			return tokens;
+		},
+		restore: () => (globalThis.fetch = realFetch)
+	};
+}
+
+async function pushEnv() {
+	return {
+		ALERT_EMAIL_FROM: 'alerts@example.com',
+		ALERT_EMAIL_TO: 'owner@example.com',
+		RESEND_API_KEY: 're_test',
+		FCM_SERVICE_ACCOUNT_AGRINOVA: (await testServiceAccount('agrinova-app')).json,
+		FCM_SERVICE_ACCOUNT_MOPS: (await testServiceAccount('mops-app')).json
+	};
+}
+
+test('push goes to each configured app project for down and recovery; others get none', async () => {
+	const env = await pushEnv();
+	const mock = pushMock();
+	const h = harness(env);
+	await h.tick();
+	await h.tick();
+	h.set(false, false);
+	for (let i = 0; i < 5; i++) await h.tick();
+	assert.deepEqual(mock.pushes.map((p) => p.url).sort(), [
+		'https://fcm.googleapis.com/v1/projects/agrinova-app/messages:send',
+		'https://fcm.googleapis.com/v1/projects/mops-app/messages:send'
+	]);
+	assert.ok(mock.pushes.every((p) => p.topic === 'service-status' && p.data.status === 'down'));
+	assert.equal(
+		mock.pushes.find((p) => p.data.appId === 'mops').android.collapse_key,
+		'status-mops'
+	);
+	assert.equal(mock.emails.length, 1);
+	h.set(true, true);
+	for (let i = 0; i < 3; i++) await h.tick();
+	assert.equal(mock.pushes.length, 4);
+	assert.ok(mock.pushes.slice(2).every((p) => p.data.status === 'operational'));
+	assert.equal(mock.tokens, 2);
+	h.db.close();
+	mock.restore();
+});
+
+test('failed pushes retry without blocking email, and stale or superseded changes are dropped', async () => {
+	const env = await pushEnv();
+	let failing = true;
+	const mock = pushMock({ failing: () => failing });
+	const h = harness(env);
+	await h.tick();
+	await h.tick();
+	h.set(false, false);
+	for (let i = 0; i < 3; i++) await h.tick();
+	assert.equal(mock.emails.length, 1);
+	assert.equal(mock.pushes.length, 0);
+	failing = false;
+	await h.tick();
+	assert.equal(mock.pushes.length, 2);
+	// A down that only gets through after recovery is superseded by the recovery.
+	failing = true;
+	h.set(true, true);
+	await h.tick();
+	await h.tick();
+	h.set(false, false);
+	for (let i = 0; i < 3; i++) await h.tick();
+	h.set(true, true);
+	await h.tick();
+	await h.tick();
+	h.advance(2 * 60 * MINUTE);
+	failing = false;
+	await h.tick();
+	assert.equal(mock.pushes.length, 2);
+	h.db.close();
+	mock.restore();
 });
 
 test('scheduled handler uses singleton binding while public status only reads; no tick route exposed', async () => {

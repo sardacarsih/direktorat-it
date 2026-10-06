@@ -91,6 +91,30 @@ sebagai tidak terkirim dan tidak dikirim ulang. Retry memakai backoff 1 menit sa
 `Idempotency-Key` (hash dari ID event dalam digest) tetap sama pada retry.
 Snapshot publik tidak memuat alamat email atau credential provider.
 
+### Push notification (FCM)
+
+Selain email, setiap perubahan DOWN/pulih dikirim sebagai push FCM ke **semua
+pengguna aplikasi terkait** melalui project Firebase milik aplikasi itu sendiri.
+Simpan JSON service account (peran *Firebase Cloud Messaging API Admin*) sebagai
+secret per aplikasi, dengan nama `FCM_SERVICE_ACCOUNT_<ID APLIKASI>`:
+
+```bash
+npx wrangler secret put FCM_SERVICE_ACCOUNT_AGRINOVA < agrinova-service-account.json
+```
+
+ID sesuai `config.json` (AGRINOVA, MOPS, EOFFICEPRO, INVENTORY, PURCHASING, HRIS,
+OPAL). Aplikasi tanpa secret tidak menerima push. Pesan dikirim ke topic
+`service-status` (ubah lewat variabel `FCM_TOPIC`) dengan `collapse_key`
+`status-<id>`, sehingga notifikasi pulih menggantikan notifikasi gangguan. TTL
+1 jam: perubahan yang belum terkirim lebih dari 1 jam dibuang, dan hanya perubahan
+terbaru per aplikasi yang dikirim. Kegagalan dicatat sebagai `[push-delivery]` dan
+di-retry dengan backoff yang sama, terpisah dari email.
+
+Di sisi aplikasi mobile, subscribe ke topic saat aplikasi dibuka (Flutter:
+`FirebaseMessaging.instance.subscribeToTopic('service-status')`) dan minta izin
+notifikasi (Android 13+/iOS). Field `data` berisi `appId`, `status`
+(`down`/`operational`), `eventId`, dan `at`.
+
 Jalankan `bun run test:monitoring`, `bun run check:worker`, `bun run check`, dan
 `bun run build`. Untuk runtime lokal, gunakan `wrangler dev --test-scheduled`
 dan panggil `/__scheduled?cron=*+*+*+*+*`; akses `/status.json` biasa tidak menjalankan
