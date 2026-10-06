@@ -274,8 +274,15 @@ export class PublicMonitor {
 					})
 				});
 				if (!response.ok) {
-					const detail = (await response.text().catch(() => '')).slice(0, 300);
-					throw new Error(`Resend ${response.status} ${detail}`);
+					const headers = ['content-type', 'cf-ray', 'x-resend-error-id', 'retry-after']
+						.map((name) => `${name}=${response.headers.get(name) ?? '-'}`)
+						.join(' ');
+					const detail = (
+						await response
+							.text()
+							.catch((readError: unknown) => `body-unreadable: ${String(readError)}`)
+					).slice(0, 300);
+					throw new Error(`Resend ${response.status} ${headers} ${detail}`);
 				}
 				delivered = true;
 				console.log(`[alert-delivery] ${event.id} delivered`);
