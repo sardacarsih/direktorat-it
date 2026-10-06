@@ -16,6 +16,8 @@
 	"vars": {
 		"ORIGIN_STATUS_URL": "https://it-origin.kskgroup.web.id/status.json",
 		"ALERT_EMAIL_FROM": "Direktorat IT <onboarding@resend.dev>",
-		"ALERT_EMAIL_TO": "kskitdeveloper@gmail.com"
+		"ALERT_EMAIL_TO": "kskitdeveloper@gmail.com",
+		"FCM_CHANNEL_EOFFICEPRO": "eoffice_system_v2",
+		"FCM_CHANNEL_AGRINOVA": "service_status"
 	}
 }

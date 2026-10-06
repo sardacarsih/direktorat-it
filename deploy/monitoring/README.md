@@ -95,7 +95,7 @@ Snapshot publik tidak memuat alamat email atau credential provider.
 
 Selain email, setiap perubahan DOWN/pulih dikirim sebagai push FCM ke **semua
 pengguna aplikasi terkait** melalui project Firebase milik aplikasi itu sendiri.
-Simpan JSON service account (peran *Firebase Cloud Messaging API Admin*) sebagai
+Simpan JSON service account (peran _Firebase Cloud Messaging API Admin_) sebagai
 secret per aplikasi, dengan nama `FCM_SERVICE_ACCOUNT_<ID APLIKASI>`:
 
 ```bash
@@ -109,6 +109,12 @@ OPAL). Aplikasi tanpa secret tidak menerima push. Pesan dikirim ke topic
 1 jam: perubahan yang belum terkirim lebih dari 1 jam dibuang, dan hanya perubahan
 terbaru per aplikasi yang dikirim. Kegagalan dicatat sebagai `[push-delivery]` dan
 di-retry dengan backoff yang sama, terpisah dari email.
+
+Channel notifikasi Android per aplikasi diatur lewat variabel opsional
+`FCM_CHANNEL_<ID APLIKASI>` di `wrangler.jsonc` (saat ini
+`FCM_CHANNEL_EOFFICEPRO=eoffice_system_v2` dan `FCM_CHANNEL_AGRINOVA=service_status`),
+dikirim sebagai `android.notification.channel_id`. Tanpa variabel ini, atau bila
+channel belum ada di perangkat, Android memakai channel default aplikasi.
 
 Di sisi aplikasi mobile, subscribe ke topic saat aplikasi dibuka (Flutter:
 `FirebaseMessaging.instance.subscribeToTopic('service-status')`) dan minta izin

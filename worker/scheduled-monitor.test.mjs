@@ -312,7 +312,8 @@ async function pushEnv() {
 		ALERT_EMAIL_TO: 'owner@example.com',
 		RESEND_API_KEY: 're_test',
 		FCM_SERVICE_ACCOUNT_AGRINOVA: (await testServiceAccount('agrinova-app')).json,
-		FCM_SERVICE_ACCOUNT_MOPS: (await testServiceAccount('mops-app')).json
+		FCM_SERVICE_ACCOUNT_MOPS: (await testServiceAccount('mops-app')).json,
+		FCM_CHANNEL_AGRINOVA: 'service_status'
 	};
 }
 
@@ -332,6 +333,11 @@ test('push goes to each configured app project for down and recovery; others get
 	assert.equal(
 		mock.pushes.find((p) => p.data.appId === 'mops').android.collapse_key,
 		'status-mops'
+	);
+	assert.equal(mock.pushes.find((p) => p.data.appId === 'mops').android.notification, undefined);
+	assert.equal(
+		mock.pushes.find((p) => p.data.appId === 'agrinova').android.notification.channel_id,
+		'service_status'
 	);
 	assert.equal(mock.emails.length, 1);
 	h.set(true, true);

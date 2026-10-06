@@ -25,6 +25,8 @@ type MonitorEnvironment = {
 	FCM_TOPIC?: string;
 	// One Firebase service account JSON per application: FCM_SERVICE_ACCOUNT_<APP ID>.
 	[serviceAccount: `FCM_SERVICE_ACCOUNT_${string}`]: string | undefined;
+	// Optional Android notification channel per application: FCM_CHANNEL_<APP ID>.
+	[channel: `FCM_CHANNEL_${string}`]: string | undefined;
 };
 const PUSH_MAX_AGE = 60 * MINUTE;
 type Channel = {
@@ -380,6 +382,8 @@ export class PublicMonitor {
 			const change = JSON.parse(item.payload) as MonitorEvent;
 			const down = change.status === 'down';
 			const collapse = `status-${change.appId}`;
+			// Devices without this channel fall back to the app's default channel.
+			const channel = this.env[`FCM_CHANNEL_${change.appId.toUpperCase()}`];
 			try {
 				await this.fcm.sendTopic(account, {
 					topic: this.env.FCM_TOPIC || 'service-status',
@@ -392,7 +396,12 @@ export class PublicMonitor {
 							: 'Layanan sudah dapat digunakan kembali.'
 					},
 					data: { appId: change.appId, status: change.status, eventId: change.id, at: change.at },
-					android: { priority: 'HIGH', collapse_key: collapse, ttl: '3600s' },
+					android: {
+						priority: 'HIGH',
+						collapse_key: collapse,
+						ttl: '3600s',
+						...(channel ? { notification: { channel_id: channel } } : {})
+					},
 					apns: {
 						headers: {
 							'apns-collapse-id': collapse,
