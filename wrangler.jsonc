@@ -4,6 +4,7 @@
 	"compatibility_date": "2026-10-04",
 	"workers_dev": true,
 	"triggers": { "crons": ["* * * * *"] },
+	"observability": { "enabled": true },
 	"durable_objects": { "bindings": [{ "name": "MONITOR", "class_name": "PublicMonitor" }] },
 	"migrations": [{ "tag": "public-monitor-v1", "new_sqlite_classes": ["PublicMonitor"] }],
 	"routes": [{ "pattern": "it.kskgroup.web.id", "custom_domain": true }],

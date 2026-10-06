@@ -268,10 +268,17 @@ export class PublicMonitor {
 						text: `${change.name} (${change.check === 'page' ? 'halaman HTTPS' : 'aplikasi'}) ${change.status === 'down' ? 'mengalami gangguan setelah 3 kegagalan berturut-turut' : 'pulih setelah 2 keberhasilan berturut-turut'}.\nWaktu: ${change.at}\nEvent: ${change.id}\nDashboard: https://it.kskgroup.web.id/#sistem`
 					})
 				});
-				if (!response.ok) throw new Error('Resend rejected the message');
+				if (!response.ok) {
+					const detail = (await response.text().catch(() => '')).slice(0, 300);
+					throw new Error(`Resend ${response.status} ${detail}`);
+				}
 				delivered = true;
-			} catch {
-				/* Retry pending notifications without exposing addresses or provider errors. */
+				console.log(`[alert-delivery] ${event.id} delivered`);
+			} catch (error) {
+				// Failures are only visible in private observability logs; delivery is retried below.
+				console.error(
+					`[alert-delivery] ${event.id} failed: ${error instanceof Error ? error.message : String(error)}`
+				);
 			}
 			this.sql.exec(
 				'UPDATE events SET delivered=?, attempts=attempts+1, next_attempt=? WHERE id=?',
