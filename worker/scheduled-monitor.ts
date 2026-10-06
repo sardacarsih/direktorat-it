@@ -20,6 +20,7 @@ type MonitorEnvironment = {
 	ALERT_EMAIL_FROM?: string;
 	ALERT_EMAIL_TO?: string;
 	RESEND_API_KEY?: string;
+	ALERT_DAILY_LIMIT?: string;
 };
 type Channel = {
 	stable: 'operational' | 'down' | null;
@@ -217,6 +218,7 @@ export class PublicMonitor {
 	}
 	// One alert per outage per application: "down" once when either check fails for good,
 	// "operational" once when both have recovered. Repeated failures stay silent.
+	// Events from all applications are emailed together as one digest by deliver().
 	private alert(
 		app: { id: string; name: string; status: SystemStatus; publicStatus: SystemStatus },
 		slot: number
@@ -246,58 +248,92 @@ export class PublicMonitor {
 			slot
 		);
 	}
+	// All pending changes go out as one digest email so a shared outage costs one email,
+	// not one per application. A daily cap (UTC, like Resend's quota) suppresses the rest.
 	private async deliver(): Promise<void> {
 		if (!this.env.RESEND_API_KEY || !this.env.ALERT_EMAIL_FROM || !this.env.ALERT_EMAIL_TO) return;
 		const now = this.dependencies.now();
 		const pending = this.sql
-			.exec<{ id: string; payload: string; attempts: number }>(
-				'SELECT id,payload,attempts FROM events WHERE delivered=0 AND next_attempt<=? ORDER BY at LIMIT 10',
-				now
+			.exec<{ id: string; payload: string; attempts: number; next_attempt: number }>(
+				'SELECT id,payload,attempts,next_attempt FROM events WHERE delivered=0 ORDER BY at LIMIT 50'
 			)
 			.toArray();
-		for (const event of pending) {
-			let delivered = false;
-			try {
-				const change = JSON.parse(event.payload) as MonitorEvent;
-				const response = await this.dependencies.fetcher('https://api.resend.com/emails', {
-					method: 'POST',
-					headers: {
-						Authorization: `Bearer ${this.env.RESEND_API_KEY}`,
-						'Content-Type': 'application/json',
-						'Idempotency-Key': event.id
-					},
-					body: JSON.stringify({
-						from: this.env.ALERT_EMAIL_FROM,
-						to: this.env.ALERT_EMAIL_TO.split(',').map((address) => address.trim()),
-						subject: `[Direktorat IT] ${change.name}: ${change.status === 'down' ? 'TIDAK TERSEDIA' : 'PULIH'}`,
-						text: `${change.name} (${change.check === 'page' ? 'halaman HTTPS' : 'aplikasi'}) ${change.status === 'down' ? 'mengalami gangguan setelah 3 kegagalan berturut-turut' : 'pulih setelah 2 keberhasilan berturut-turut'}.\nWaktu: ${change.at}\nEvent: ${change.id}\nDashboard: https://it.kskgroup.web.id/#sistem`
-					})
-				});
-				if (!response.ok) {
-					const headers = ['content-type', 'cf-ray', 'x-resend-error-id', 'retry-after']
-						.map((name) => `${name}=${response.headers.get(name) ?? '-'}`)
-						.join(' ');
-					const detail = (
-						await response
-							.text()
-							.catch((readError: unknown) => `body-unreadable: ${String(readError)}`)
-					).slice(0, 300);
-					throw new Error(`Resend ${response.status} ${headers} ${detail}`);
-				}
-				delivered = true;
-				console.log(`[alert-delivery] ${event.id} delivered`);
-			} catch (error) {
-				// Failures are only visible in private observability logs; delivery is retried below.
-				console.error(
-					`[alert-delivery] ${event.id} failed: ${error instanceof Error ? error.message : String(error)}`
-				);
-			}
+		if (!pending.some((event) => event.next_attempt <= now)) return;
+		const ids = pending.map((event) => event.id);
+		const mark = (delivered: number, nextAttempt: number) =>
 			this.sql.exec(
-				'UPDATE events SET delivered=?, attempts=attempts+1, next_attempt=? WHERE id=?',
-				+delivered,
-				now + Math.min(3600000, MINUTE * 2 ** Math.min(event.attempts, 6)),
-				event.id
+				`UPDATE events SET delivered=?, attempts=attempts+1, next_attempt=? WHERE id IN (${ids.map(() => '?').join(',')})`,
+				delivered,
+				nextAttempt,
+				...ids
 			);
+		const day = new Date(now).toISOString().slice(0, 10);
+		const stored = this.get<{ day: string; sent: number }>('emailQuota');
+		const quota = stored?.day === day ? stored : { day, sent: 0 };
+		const limit = Number(this.env.ALERT_DAILY_LIMIT) || 80;
+		if (quota.sent >= limit) {
+			mark(2, now);
+			console.warn(`[alert-delivery] daily limit ${limit} reached; suppressed ${ids.join(', ')}`);
+			return;
+		}
+		const changes = pending.map((event) => JSON.parse(event.payload) as MonitorEvent);
+		const down = changes.filter((change) => change.status === 'down');
+		const up = changes.filter((change) => change.status !== 'down');
+		const subject =
+			changes.length === 1
+				? `[Direktorat IT] ${changes[0].name}: ${down.length ? 'TIDAK TERSEDIA' : 'PULIH'}`
+				: `[Direktorat IT] ${[down.length && `Gangguan: ${down.length} sistem`, up.length && `Pulih: ${up.length} sistem`].filter(Boolean).join(', ')}`;
+		const lines = (list: MonitorEvent[]) =>
+			list.map(
+				(change) =>
+					`- ${change.name} (${change.check === 'page' ? 'halaman HTTPS' : 'aplikasi'}) — ${change.at}`
+			);
+		const text = [
+			...(down.length ? ['TIDAK TERSEDIA (3 kegagalan berturut-turut):', ...lines(down), ''] : []),
+			...(up.length ? ['PULIH (2 keberhasilan berturut-turut):', ...lines(up), ''] : []),
+			'Dashboard: https://it.kskgroup.web.id/#sistem'
+		].join('\n');
+		const hash = await crypto.subtle.digest(
+			'SHA-256',
+			new TextEncoder().encode([...ids].sort().join('|'))
+		);
+		const key = `digest:${[...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, '0')).join('')}`;
+		try {
+			const response = await this.dependencies.fetcher('https://api.resend.com/emails', {
+				method: 'POST',
+				headers: {
+					Authorization: `Bearer ${this.env.RESEND_API_KEY}`,
+					'Content-Type': 'application/json',
+					'Idempotency-Key': key
+				},
+				body: JSON.stringify({
+					from: this.env.ALERT_EMAIL_FROM,
+					to: this.env.ALERT_EMAIL_TO.split(',').map((address) => address.trim()),
+					subject,
+					text
+				})
+			});
+			if (!response.ok) {
+				const headers = ['content-type', 'cf-ray', 'x-resend-error-id', 'retry-after']
+					.map((name) => `${name}=${response.headers.get(name) ?? '-'}`)
+					.join(' ');
+				const detail = (
+					await response
+						.text()
+						.catch((readError: unknown) => `body-unreadable: ${String(readError)}`)
+				).slice(0, 300);
+				throw new Error(`Resend ${response.status} ${headers} ${detail}`);
+			}
+			mark(1, now);
+			this.put('emailQuota', { day, sent: quota.sent + 1 });
+			console.log(`[alert-delivery] ${key} delivered (${ids.length} events)`);
+		} catch (error) {
+			// Failures are only visible in private observability logs; delivery is retried with backoff.
+			console.error(
+				`[alert-delivery] ${key} failed (${ids.length} events): ${error instanceof Error ? error.message : String(error)}`
+			);
+			const attempts = Math.max(...pending.map((event) => event.attempts));
+			mark(0, now + Math.min(3600000, MINUTE * 2 ** Math.min(attempts, 6)));
 		}
 	}
 }

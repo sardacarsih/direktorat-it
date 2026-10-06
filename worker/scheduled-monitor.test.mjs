@@ -205,14 +205,14 @@ test('email failure retries from durable outbox and delivered events are not sen
 	await h.tick();
 	await h.tick();
 	await h.tick();
-	assert.equal(attempts, 7);
+	assert.equal(attempts, 1);
 	h.restart();
 	failing = false;
 	await h.tick();
-	assert.equal(messages.length, 7);
+	assert.equal(messages.length, 1);
 	assert.ok((await h.snapshot()).monitoring.events.every((e) => e.delivered));
 	await h.tick();
-	assert.equal(messages.length, 7);
+	assert.equal(messages.length, 1);
 	assert.ok(
 		messages.every(
 			(message) => message.to[0] === 'owner@example.com' && message.headers['Idempotency-Key']
@@ -222,11 +222,11 @@ test('email failure retries from durable outbox and delivered events are not sen
 	globalThis.fetch = realFetch;
 });
 
-test('sends one down email per outage and one recovery email, even when both checks fail', async () => {
-	const subjects = [];
+test('sends one digest email for a shared outage and one for its recovery', async () => {
+	const messages = [];
 	const realFetch = globalThis.fetch;
 	globalThis.fetch = async (_url, init) => {
-		subjects.push(JSON.parse(init.body).subject);
+		messages.push(JSON.parse(init.body));
 		return Response.json({ id: 'email' });
 	};
 	const h = harness({
@@ -238,13 +238,41 @@ test('sends one down email per outage and one recovery email, even when both che
 	await h.tick();
 	h.set(false, false);
 	for (let i = 0; i < 8; i++) await h.tick();
-	const down = subjects.length;
-	assert.equal(down, config.apps.length);
-	assert.ok(subjects.every((subject) => subject.endsWith('TIDAK TERSEDIA')));
+	assert.equal(messages.length, 1);
+	assert.equal(messages[0].subject, `[Direktorat IT] Gangguan: ${config.apps.length} sistem`);
+	assert.ok(config.apps.every((app) => messages[0].text.includes(app.name)));
 	h.set(true, true);
 	for (let i = 0; i < 4; i++) await h.tick();
-	assert.equal(subjects.length, down * 2);
-	assert.ok(subjects.slice(down).every((subject) => subject.endsWith('PULIH')));
+	assert.equal(messages.length, 2);
+	assert.equal(messages[1].subject, `[Direktorat IT] Pulih: ${config.apps.length} sistem`);
+	h.db.close();
+	globalThis.fetch = realFetch;
+});
+
+test('daily limit suppresses further emails and marks events undelivered', async () => {
+	let sent = 0;
+	const realFetch = globalThis.fetch;
+	globalThis.fetch = async () => {
+		sent++;
+		return Response.json({ id: 'email' });
+	};
+	const h = harness({
+		ALERT_EMAIL_FROM: 'alerts@example.com',
+		ALERT_EMAIL_TO: 'owner@example.com',
+		RESEND_API_KEY: 're_test',
+		ALERT_DAILY_LIMIT: '1'
+	});
+	await h.tick();
+	await h.tick();
+	h.set(false);
+	for (let i = 0; i < 3; i++) await h.tick();
+	assert.equal(sent, 1);
+	h.set(true);
+	for (let i = 0; i < 4; i++) await h.tick();
+	assert.equal(sent, 1);
+	const events = (await h.snapshot()).monitoring.events;
+	assert.ok(events.filter((e) => e.status === 'operational').every((e) => !e.delivered));
+	assert.ok(events.filter((e) => e.status === 'down').every((e) => e.delivered));
 	h.db.close();
 	globalThis.fetch = realFetch;
 });

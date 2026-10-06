@@ -81,10 +81,14 @@ menambahkan endpoint pengiriman email publik. Batasi binding pada penerima yang
 ditetapkan. Tidak perlu memindahkan MX domain perusahaan ke Cloudflare untuk
 sekadar mengaktifkan probe terjadwal.
 
-Perubahan ke DOWN dan pulih masuk outbox persisten. Maksimal 10 email dikirim per
-siklus, retry memakai backoff 1 menit sampai 1 jam; event kedaluwarsa setelah 30
-hari. Pengiriman bersifat at-least-once: kegagalan setelah provider menerima
-email dapat menghasilkan duplikat; `X-Monitor-Event-ID` tetap sama pada retry.
+Perubahan ke DOWN dan pulih masuk outbox persisten. Semua event yang tertunda
+(maksimal 50, lintas aplikasi) digabung menjadi **satu email digest** per siklus
+via Resend, sehingga gangguan serentak hanya memakai 1 email DOWN + 1 email PULIH.
+Batas harian (UTC, mengikuti reset kuota Resend) default 80 email, bisa diubah lewat
+variabel `ALERT_DAILY_LIMIT`; setelah batas tercapai event tetap tampil di dashboard
+sebagai tidak terkirim dan tidak dikirim ulang. Retry memakai backoff 1 menit sampai
+1 jam; event kedaluwarsa setelah 30 hari. Pengiriman bersifat at-least-once;
+`Idempotency-Key` (hash dari ID event dalam digest) tetap sama pada retry.
 Snapshot publik tidak memuat alamat email atau credential provider.
 
 Jalankan `bun run test:monitoring`, `bun run check:worker`, `bun run check`, dan
