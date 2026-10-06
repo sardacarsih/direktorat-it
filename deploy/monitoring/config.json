@@ -15,7 +15,7 @@
 			"id": "mops",
 			"name": "MOPS",
 			"services": ["mops"],
-			"checks": [{ "url": "http://127.0.0.1:3001/healthz", "json": { "status": "ok" } }],
+			"checks": [{ "url": "http://127.0.0.1:3001/health", "json": { "status": "ok" } }],
 			"publicUrl": "https://mops.kskgroup.web.id",
 			"publicHealthPath": "/health/live"
 		},
@@ -25,7 +25,7 @@
 			"services": ["eoffice-api", "eoffice-web"],
 			"checks": [
 				{
-					"url": "http://127.0.0.1:8888/healthz",
+					"url": "http://127.0.0.1:8888/health",
 					"json": { "deps": { "minio": "ok", "postgres": "ok", "redis": "ok" } }
 				},
 				{ "url": "http://127.0.0.1:3333/login" }
